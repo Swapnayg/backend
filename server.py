@@ -1,6 +1,5 @@
 from sqlalchemy import and_, text 
 from flask import Flask, render_template, request, Response, send_file , redirect, session, url_for, jsonify
-import psycopg2 
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from users import Users
@@ -134,4 +133,4 @@ def logout_index():
     return jsonify({"data":"success"})
    
 if __name__ == '__main__': 
-	app.run(debug=True) 
+	app.run(host='0.0.0.0')

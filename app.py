@@ -39,8 +39,8 @@ app = Flask(__name__)
 CORS(app)
 
 
-#app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:Ajax24x7#365@database-2.ctogk8s4eyyp.ap-south-1.rds.amazonaws.com:5432/bma_db"
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:swapna234@localhost/bma_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:Ajax24x7#365@database-2.ctogk8s4eyyp.ap-south-1.rds.amazonaws.com:5432/bma_db"
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:swapna234@localhost/bma_db'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config["SESSION_PERMANENT"] = False     # Sessions expire when the browser is closed

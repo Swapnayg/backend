@@ -117,20 +117,9 @@ class PDF_Profit_Loss():
                         coa_details =  ChartOfAccount.query.filter(and_(ChartOfAccount.accnt_type == sub_acc.id,ChartOfAccount.userid == userid )).all()
                         for coa_d in coa_details:
                             chart_of_acct.append(coa_d.map())
-                            if(str(coa_d.account_mode).strip() == "general" or str(coa_d.account_mode).strip() == "vehicle" or str(coa_d.account_mode).strip() == "party" or str(coa_d.account_mode).strip() == "commission"):
-                                ledg_balance = 0
-                                ledger_details =  Ledger.query.filter(and_(Ledger.ledger_account_no == coa_d.id, Ledger.datetime >= start_date, Ledger.datetime <= end_date)).all()
-                                for ledg in ledger_details:
-                                    sub_networth += int(ledg.ledger_debit_amount) - int(ledg.ledger_credit_amount)
-                                    ledg_balance += int(ledg.ledger_debit_amount) - int(ledg.ledger_credit_amount)
-                                ledger_data.append({"id":coa_d.id,"ledger_account_name":coa_d.accnt_name, "ledger_account_no":coa_d.accnt_type, "ledger_balance_amount":ledg_balance, "ledger_type":str(coa_d.account_mode).strip()})    
-                            elif(str(coa_d.account_mode).strip() == "client" or str(coa_d.account_mode).strip() == "supplier"):
-                                ledg_balance = 0
-                                ledger_details2 =  Ledger2.query.filter(and_(Ledger2.ledger_account_no == coa_d.id, Ledger2.datetime >= start_date, Ledger2.datetime <= end_date)).all()
-                                for ledg2 in ledger_details2:
-                                    sub_networth += int(ledg2.ledger_debit_amount) - int(ledg2.ledger_credit_amount)
-                                    ledg_balance += int(ledg2.ledger_debit_amount) - int(ledg2.ledger_credit_amount)  
-                                ledger_data.append({"id":coa_d.id, "ledger_account_name":coa_d.accnt_name,"ledger_account_no":coa_d.accnt_type, "ledger_balance_amount":ledg_balance, "ledger_type":str(coa_d.account_mode).strip()}) 
+                            sub_networth += int(coa_d.networth)
+                            ledg_balance = int(coa_d.networth)
+                            ledger_data.append({"id":coa_d.id, "ledger_account_name":coa_d.accnt_name,"ledger_account_no":coa_d.accnt_type, "ledger_balance_amount":ledg_balance, "ledger_type":str(coa_d.account_mode).strip()}) 
                         account_sub_d.append({"id":sub_acc.id, "type_name_id":sub_acc.type_name_id, "sub_type_name":sub_acc.sub_type_name, "sub_networth":sub_networth})
                     line_y = line_y - 20
                     for j in range(len(account_sub_d)):
@@ -177,6 +166,10 @@ class PDF_Profit_Loss():
         c.setFillColor(HexColor('#1E4C9C'))
         c.rect(24, line_y - 85, 550, 25, fill=1 ,stroke=1)
         c.setFillColor(HexColor('#ffffff'))
+        if(int(netprofit) < 0):
+            netprofit = int(netprofit) - int(tax_receive) + int(tax_payable)
+        else:
+            netprofit = int(netprofit) + int(tax_receive) - int(tax_payable)
         c.drawCentredString(200, line_y - 75, str("Net Profit (Incomes - Expenses)").strip())
         c.drawCentredString(480, line_y - 75, "Rs " + format(float(str(netprofit).strip()), ","))
         c.showPage()

@@ -188,12 +188,14 @@ def update_manifest_set_update():
     manifest_goods_value = GoodsNlc.query.filter(GoodsNlc.id == int(data['G_BiltyId'])).first()
     get_prev_party = Party.query.get(int(str(manifest_goods_value.parties)))
     get_prev_vehicle = Vehicles.query.get(int(str(manifest_goods_value.vehicle)))
+    get_vehicle = Vehicles.query.get(int(str(data['G_BVehicle'])))
     manifest_goods_value.bilty_no = str(data['G_BiltyNo'])
     manifest_goods_value.b_date = str(data['G_BiltyDate'])
     manifest_goods_value.vehicle = str(data['G_BVehicle'])
     manifest_goods_value.loading_point = str(data['G_loading'])
     manifest_goods_value.unloading_point = str(data['G_unloading'])
-    # manifest_goods_value.parties = str(data['G_Bparty'])
+    manifest_goods_value.tax_per = str(data['per_wft'])
+    manifest_goods_value.comm_per = str(data['per_comm'])
     manifest_goods_value.weight = str(data['G_Bweight'])
     manifest_goods_value.per_ton = str(data['G_BPerTon'])
     manifest_goods_value.freight = party_amt
@@ -205,51 +207,62 @@ def update_manifest_set_update():
     manifest_goods_value.advance_to_vehicle = str(data['G_BvehicleAdvance'])
     manifest_goods_value.paid_by = str(data['G_paid_Method'])
     manifest_goods_value.goods_gst = str(data['Goods_GST'])
-    get_vehicle = Vehicles.query.get(int(str(data['G_BVehicle'])))
     db.session.flush()
     db.session.commit()
     vehicle_advance = 0
     ledger_comm = Ledger.query.filter(and_( Ledger.ledger_gen_date == manifest_goods_value.b_date,Ledger.ledger_bill == manifest_goods_value.bilty_no ,Ledger.ledger_type == "commission",Ledger.pay_start == "started" )).one()
     ledger_comm.ledger_credit_amount = int(data['G_BComm'])
+    ledger_comm.ledger_balance = int(data['G_BComm'])
+    ledger_party = Ledger.query.filter(and_( Ledger.ledger_gen_date == manifest_goods_value.b_date,Ledger.ledger_bill == manifest_goods_value.bilty_no ,Ledger.ledger_type == "party",Ledger.pay_start == "started" )).one()
+    ledger_party.ledger_debit_amount = int(party_amt)
+    ledger_party.ledger_balance = int(party_amt)
     db.session.flush()
     db.session.commit()
     if(str(data['G_BvehicleAdvance']).strip() != ''):
         vehicle_advance = str(data['G_BvehicleAdvance']).strip()
     if (int(vehicle_advance) != 0) :    
-        ledger_values = Ledger.query.filter(and_(Ledger.ledger_gen_date == manifest_goods_value.b_date,Ledger.ledger_bill == manifest_goods_value.bilty_no ,Ledger.ledger_type == "vehicle",Ledger.pay_start == "started")).order_by(Ledger.id.asc()).all()
+        ledger_values = Ledger.query.filter(and_(Ledger.ledger_gen_date == manifest_goods_value.b_date,Ledger.ledger_bill == manifest_goods_value.bilty_no ,Ledger.ledger_type == "vehicle")).order_by(Ledger.id.asc()).all()
         ledger_values[0].ledger_credit_amount = str(data['G_BvehicleFreight'])
-        ledger_values[0].ledger_balance = str(data['G_BvehicleFreight'])
+        db.session.flush()
+        db.session.commit()
         if(len(ledger_values) > 1):
             del_vehicle_ledger_data = Ledger.__table__.delete().where(Ledger.id == int(ledger_values[1].id))
             db.session.execute(del_vehicle_ledger_data)
         ledger_balance = int(get_vehicle.net_worth) + (int(data['G_BvehicleFreight']))
         cash_balance = ledger_balance - int(data['G_BvehicleAdvance'])
-        add_cash_veh_adv =  insert(Ledger).values(ledger_account_no =get_vehicle.chart_accnt, ledger_party_name= get_vehicle.vehicle_num, ledger_gen_date= data['G_BiltyDate'], ledger_debit_amount = str(data['G_BvehicleAdvance']).strip(), ledger_credit_amount= 0, ledger_bill=data['G_BiltyNo'],ledger_method= data['G_paid_Method'], ledger_balance= cash_balance, ledger_type='vehicle', ledger_descp="Payment Towards Bill No: " +data['G_BiltyNo'], userid = userid) 
+        add_cash_veh_adv =  insert(Ledger).values(ledger_account_no =get_vehicle.chart_accnt, ledger_party_name= get_vehicle.vehicle_num, ledger_gen_date= data['G_BiltyDate'], ledger_debit_amount = str(data['G_BvehicleAdvance']).strip(), ledger_credit_amount= 0, ledger_bill=data['G_BiltyNo'],ledger_method= data['G_paid_Method'], ledger_balance= int(int(str(data['G_BvehicleFreight']).strip()) - int(str(data['G_BvehicleAdvance']).strip())), ledger_type='vehicle', ledger_descp="Payment Towards Bill No: " +data['G_BiltyNo'], userid = userid) 
         add_cash_veh_adv_result = db.session.execute(add_cash_veh_adv)
     else:
         ledger_values = Ledger.query.filter(and_(Ledger.ledger_gen_date == manifest_goods_value.b_date,Ledger.ledger_bill == manifest_goods_value.bilty_no ,Ledger.ledger_type == "vehicle",Ledger.pay_start == "started" )).order_by(Ledger.id.asc()).all()
         ledger_values[0].ledger_credit_amount = str(data['G_BvehicleFreight'])
-        ledger_values[0].ledger_balance = str(data['G_BvehicleFreight'])
+        db.session.flush()
+        db.session.commit()
         if(len(ledger_values) > 1):
             del_vehicle_ledger_data = Ledger.__table__.delete().where(Ledger.id == int(ledger_values[1].id))
             db.session.execute(del_vehicle_ledger_data)
+    party_led_bal = 0
+    veh_led_bal = 0
+    comm_led_bal = 0
+    manif_ledg = Ledger.query.filter(and_(Ledger.ledger_bill == str(manifest_goods_value.bilty_no).strip())).order_by(Ledger.id.asc()).all()
+    for man in manif_ledg:
+        if(str(man.ledger_type).strip() == "party"):
+            party_led_bal +=  int(man.ledger_credit_amount) - int(man.ledger_debit_amount)
+            man.ledger_balance = party_led_bal
+        elif(str(man.ledger_type).strip() == "vehicle"):
+            veh_led_bal +=   int(man.ledger_credit_amount) - int(man.ledger_debit_amount)
+            man.ledger_balance = veh_led_bal
+        elif(str(man.ledger_type).strip() == "commission"):
+            comm_led_bal +=   int(man.ledger_credit_amount) - int(man.ledger_debit_amount)
+            man.ledger_balance = comm_led_bal
         db.session.flush()
         db.session.commit()
-        
-    # if(int(str(get_prev_party.chart_accnt)) == int(str(get_party.chart_accnt))):
-    #     refresh_COA_Party(str(get_party.chart_accnt))
-    # else:
-    #     refresh_COA_Party(str(get_party.chart_accnt))
-    #     refresh_COA_Party(str(get_prev_party.chart_accnt)) 
-    if(str(manifest_goods_value.bill_status).strip() != "pending"):
-        RefreshTables.refresh_goods_oils_manifest(int(data['G_BiltyId']), "goods")
+    RefreshCOA_Customer.refresh_COA_Party(get_prev_party.chart_accnt)
     if(int(str(get_prev_vehicle.chart_accnt)) == int(str(get_vehicle.chart_accnt))):
-        RefreshCOA_Customer.refresh_COA_Vehicle(str(get_vehicle.chart_accnt))
+        RefreshCOA_Customer.refresh_COA_Vehicle(get_vehicle.chart_accnt)
     else:
-        RefreshCOA_Customer.refresh_COA_Vehicle(str(get_prev_vehicle.chart_accnt))
-        RefreshCOA_Customer.refresh_COA_Vehicle(str(get_vehicle.chart_accnt))
+        RefreshCOA_Customer.refresh_COA_Vehicle(get_prev_vehicle.chart_accnt)
+        RefreshCOA_Customer.refresh_COA_Vehicle(get_vehicle.chart_accnt)
     RefreshCOA_Customer.refresh_COA_Comm(userid)
-    
     return jsonify({"data":"updated"})
 
 
@@ -262,6 +275,7 @@ def update_mani_oils_set_update():
     manifest_oils_value = OilPso.query.filter(OilPso.id == int(data['G_OBiltyId'])).first()
     get_prev_party = Party.query.get(int(str(manifest_oils_value.parties)))
     get_prev_vehicle = Vehicles.query.get(int(str(manifest_oils_value.vehicle)))
+    get_vehicle = Vehicles.query.get(int(str(data['G_OBVehicle'])))
     manifest_oils_value.bilty_no = str(data['G_OBiltyNo'])
     manifest_oils_value.b_date = str(data['G_OBiltyDate'])
     manifest_oils_value.vehicle = str(data['G_OBVehicle'])
@@ -280,51 +294,60 @@ def update_mani_oils_set_update():
     manifest_oils_value.advance_to_vehicle = str(data['G_O_BVehicleAdvance'])
     manifest_oils_value.paid_by = str(data['G_O_paid_Method'])
     manifest_oils_value.oils_gst = str(data['G_O_Oils_GST'])
-    get_party = Party.query.get(int(str(data['G_O_Bparty'])))
-    get_vehicle = Vehicles.query.get(int(str(data['G_OBVehicle'])))
+    manifest_oils_value.tax_per = str(data['per_wft'])
+    manifest_oils_value.comm_per = str(data['per_comm'])
     db.session.flush()
     db.session.commit()
     vehicle_advance = 0
     ledger_comm = Ledger.query.filter(and_( Ledger.ledger_gen_date == manifest_oils_value.b_date,Ledger.ledger_bill == manifest_oils_value.bilty_no ,Ledger.ledger_type == "commission",Ledger.pay_start == "started")).one()
     ledger_comm.ledger_credit_amount = int(data['G_O_BComm'])
+    ledger_party = Ledger.query.filter(and_( Ledger.ledger_gen_date == manifest_oils_value.b_date,Ledger.ledger_bill == manifest_oils_value.bilty_no ,Ledger.ledger_type == "party",Ledger.pay_start == "started" )).one()
+    ledger_party.ledger_debit_amount = int(party_amt)
     db.session.flush()
     db.session.commit()
     if(str(data['G_O_BVehicleAdvance']).strip() != ''):
         vehicle_advance = str(data['G_O_BVehicleAdvance']).strip()
     if (int(vehicle_advance) != 0) :    
-        ledger_values = Ledger.query.filter(and_(Ledger.ledger_gen_date == manifest_oils_value.b_date,Ledger.ledger_bill == manifest_oils_value.bilty_no ,Ledger.ledger_type == "vehicle",Ledger.pay_start == "started")).order_by(Ledger.id.asc()).all()
+        ledger_values = Ledger.query.filter(and_(Ledger.ledger_gen_date == manifest_oils_value.b_date,Ledger.ledger_bill == manifest_oils_value.bilty_no ,Ledger.ledger_type == "vehicle")).order_by(Ledger.id.asc()).all()
         ledger_values[0].ledger_credit_amount = str(data['G_O_BVehicleFreight'])
-        ledger_values[0].ledger_balance = str(data['G_O_BVehicleFreight'])
         if(len(ledger_values) > 1):
             del_vehicle_ledger_data = Ledger.__table__.delete().where(Ledger.id == int(ledger_values[1].id))
             db.session.execute(del_vehicle_ledger_data)
         ledger_balance = int(get_vehicle.net_worth) + (int(data['G_O_BVehicleFreight']))
         cash_balance = ledger_balance - int(data['G_O_BVehicleAdvance'])
-        add_cash_veh_adv =insert(Ledger).values(ledger_account_no =get_vehicle.chart_accnt, ledger_party_name= get_vehicle.vehicle_num, ledger_gen_date= data['G_OBiltyDate'], ledger_debit_amount = str(data['G_O_BVehicleAdvance']).strip(), ledger_credit_amount= 0 , ledger_bill=data['G_OBiltyNo'],ledger_method= data['G_O_paid_Method'], ledger_balance= cash_balance, ledger_type='vehicle', ledger_descp="Payment Towards Bill No: " +data['G_OBiltyNo'], userid = userid)     
+        add_cash_veh_adv =insert(Ledger).values(ledger_account_no =get_vehicle.chart_accnt, ledger_party_name= get_vehicle.vehicle_num, ledger_gen_date= data['G_OBiltyDate'], ledger_debit_amount = str(data['G_O_BVehicleAdvance']).strip(), ledger_credit_amount= 0 , ledger_bill=data['G_OBiltyNo'],ledger_method= data['G_O_paid_Method'], ledger_balance= int(int(str(data['G_O_BVehicleFreight']).strip()) - int(str(data['G_O_BVehicleAdvance']).strip())), ledger_type='vehicle', ledger_descp="Payment Towards Bill No: " +data['G_OBiltyNo'], userid = userid)     
         add_cash_veh_adv_result = db.session.execute(add_cash_veh_adv)
     else:
         ledger_values = Ledger.query.filter(and_(Ledger.ledger_gen_date == manifest_oils_value.b_date,Ledger.ledger_bill == manifest_oils_value.bilty_no ,Ledger.ledger_type == "vehicle",Ledger.pay_start == "started" )).order_by(Ledger.id.asc()).all()
         ledger_values[0].ledger_credit_amount = str(data['G_O_BVehicleFreight'])
-        ledger_values[0].ledger_balance = str(data['G_O_BVehicleFreight'])
         if(len(ledger_values) > 1):
             del_vehicle_ledger_data = Ledger.__table__.delete().where(Ledger.id == int(ledger_values[1].id))
             db.session.execute(del_vehicle_ledger_data)
         db.session.flush()
         db.session.commit()
-        
-    if(str(manifest_oils_value.bill_status).strip() != "pending"):
-        RefreshTables.refresh_goods_oils_manifest(int(data['G_OBiltyId']), "oil")
     
-    # if(int(str(get_prev_party.chart_accnt)) == int(str(get_party.chart_accnt))):
-    #     refresh_COA_Party(str(get_party.chart_accnt))
-    # else:
-    #     refresh_COA_Party(str(get_party.chart_accnt))
-    #     refresh_COA_Party(str(get_prev_party.chart_accnt))
+    party_led_bal = 0
+    veh_led_bal = 0
+    comm_led_bal = 0
+    manif_ledg = Ledger.query.filter(and_(Ledger.ledger_bill == str(manifest_oils_value.bilty_no).strip())).order_by(Ledger.id.asc()).all()
+    for man in manif_ledg:
+        if(str(man.ledger_type).strip() == "party"):
+            party_led_bal +=  int(man.ledger_credit_amount) - int(man.ledger_debit_amount)
+            man.ledger_balance = party_led_bal
+        elif(str(man.ledger_type).strip() == "vehicle"):
+            veh_led_bal +=   int(man.ledger_credit_amount) - int(man.ledger_debit_amount)
+            man.ledger_balance = veh_led_bal
+        elif(str(man.ledger_type).strip() == "commission"):
+            comm_led_bal +=   int(man.ledger_credit_amount) - int(man.ledger_debit_amount)
+            man.ledger_balance = comm_led_bal
+        db.session.flush()
+        db.session.commit()
+    RefreshCOA_Customer.refresh_COA_Party(get_prev_party.chart_accnt)
     if(int(str(get_prev_vehicle.chart_accnt)) == int(str(get_vehicle.chart_accnt))):
-        RefreshCOA_Customer.refresh_COA_Vehicle(str(get_vehicle.chart_accnt))
+        RefreshCOA_Customer.refresh_COA_Vehicle(get_vehicle.chart_accnt)
     else:
-        RefreshCOA_Customer.refresh_COA_Vehicle(str(get_prev_vehicle.chart_accnt))
-        RefreshCOA_Customer.refresh_COA_Vehicle(str(get_vehicle.chart_accnt))
+        RefreshCOA_Customer.refresh_COA_Vehicle(get_prev_vehicle.chart_accnt)
+        RefreshCOA_Customer.refresh_COA_Vehicle(get_vehicle.chart_accnt)
     RefreshCOA_Customer.refresh_COA_Comm(userid)
     return jsonify({"data":"updated"})
 

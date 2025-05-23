@@ -150,39 +150,45 @@ def COA_data_bill():
     p_name = str(data['name']).strip()
     userid = int(data['userid'])
     select_bills = []
+    bill_lists = []
     if(p_type == "party"):
         get_party = Party.query.filter(and_(Party.english_name == str(p_name).strip().lower(),Party.userid == userid)).one()
-        coa_bills_party = PartyBill.query.filter(PartyBill.party_id == int(get_party.id)).all()
-        for coa_bills_p in coa_bills_party:
-            select_bills.append({"id":coa_bills_p.id , "bill_num":coa_bills_p.invoice_no})  
+        coa_goods_bills_party = GoodsNlc.query.filter(GoodsNlc.parties == int(get_party.id)).all()
+        coa_oils_bills_party = OilPso.query.filter(OilPso.parties == int(get_party.id)).all()
+        for coa_goods_bills_p in coa_goods_bills_party:
+            select_bills.append({"id":coa_goods_bills_p.id , "bill_num":str(coa_goods_bills_p.bilty_no).strip()})
+        for coa_oils_bills_p in coa_oils_bills_party:
+            select_bills.append({"id":coa_oils_bills_p.id , "bill_num":str(coa_oils_bills_p.bilty_no).strip()})          
     elif(p_type == "commission"):
         ledger_comm = Ledger.query.filter(and_(Ledger.ledger_type == "commission"),Ledger.userid == userid).all()
         for comm in ledger_comm:
-            select_bills.append({"id":comm.id , "bill_num":comm.ledger_bill})
+            if str(comm.ledger_bill).strip() not in bill_lists:
+                select_bills.append({"id":comm.id , "bill_num":str(comm.ledger_bill).strip()})
+                bill_lists.append(str(comm.ledger_bill).strip())
     elif(p_type == "vehicle"):
         get_vehicle = Vehicles.query.filter(and_(Vehicles.vehicle_num == str(p_name).strip().lower(),Vehicles.userid == userid)).one()
         coa_goods_bills_vehicle = GoodsNlc.query.filter(GoodsNlc.vehicle == int(get_vehicle.id)).all()
         coa_oils_bills_vehicle = OilPso.query.filter(OilPso.vehicle == int(get_vehicle.id)).all()
         for coa_goods_bills_v in coa_goods_bills_vehicle:
-            select_bills.append({"id":coa_goods_bills_v.id , "bill_num":coa_goods_bills_v.bilty_no})
+            select_bills.append({"id":coa_goods_bills_v.id , "bill_num":str(coa_goods_bills_v.bilty_no).strip()})
         for coa_oils_bills_v in coa_oils_bills_vehicle:
-            select_bills.append({"id":coa_oils_bills_v.id , "bill_num":coa_oils_bills_v.bilty_no})
+            select_bills.append({"id":coa_oils_bills_v.id , "bill_num":str(coa_oils_bills_v.bilty_no).strip()})
     elif(p_type == "client"):
         get_client = Clients.query.filter(and_(Clients.client_name == str(p_name).strip().lower(),Clients.userid == userid)).one()
         invoice_bills = TblInvoice.query.filter(TblInvoice.client_id == int(get_client.id)).all()
         customer_bills = TblClnStockRtn.query.filter(TblClnStockRtn.client_id == int(get_client.id)).all()
         for inv_bills in invoice_bills:
-            select_bills.append({"id":inv_bills.id , "bill_num":inv_bills.invoice_num})
+            select_bills.append({"id":inv_bills.id , "bill_num":str(inv_bills.invoice_num).strip()})
         for inv_cus_bills in customer_bills:
-            select_bills.append({"id":inv_cus_bills.id , "bill_num":inv_cus_bills.stock_num})
+            select_bills.append({"id":inv_cus_bills.id , "bill_num":str(inv_cus_bills.stock_num).strip()})
     elif(p_type == "supplier"):
         get_suppl = Supplier.query.filter(and_(Supplier.suppl_name == str(p_name).strip().lower(),Supplier.userid == userid)).one()
         order_bills = TblOrder.query.filter(TblOrder.supplier_id == int(get_suppl.id)).all()
         stk_rtn_bills = TblStockRtn.query.filter(TblStockRtn.supplier_id == int(get_suppl.id)).all()
         for ord_bills in order_bills:
-            select_bills.append({"id":ord_bills.id , "bill_num":ord_bills.order_num})
+            select_bills.append({"id":ord_bills.id , "bill_num":str(ord_bills.order_num).strip()})
         for stk_rtn_bll in stk_rtn_bills:
-            select_bills.append({"id":stk_rtn_bll.id , "bill_num":stk_rtn_bll.stock_num})
+            select_bills.append({"id":stk_rtn_bll.id , "bill_num":str(stk_rtn_bll.stock_num).strip()})
     return jsonify(select_bills)
 
 @api7.route('/cashbook_data/<userid>', methods=['GET'])

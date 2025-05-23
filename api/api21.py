@@ -36,70 +36,30 @@ class PDF_AllPartyReport():
         tot_deb_amt = 0
         coa_list = ChartOfAccount.query.filter(ChartOfAccount.userid == userid).all()
         for coa in coa_list:
+            debit_Amt = 0
+            credit_Amt = 0
+            if(int(coa.networth) < 0):
+                debit_Amt = abs(int(coa.networth))     
+            else:
+                credit_Amt = int(coa.networth)
+            tot_deb_amt += debit_Amt
+            tot_cred_amt += credit_Amt
             if(str(coa.account_mode).strip() == "commission"):
-                leg_debit_val = 0
-                leg_credit_val = 0
-                sum_comm_leg = Ledger.query.filter(and_(Ledger.ledger_account_no == coa.id ,Ledger.ledger_type == "commission")).all()
-                for comm_leg_result in sum_comm_leg:
-                    leg_debit_val += int(comm_leg_result.ledger_debit_amount)
-                    leg_credit_val += int(comm_leg_result.ledger_credit_amount)
-                tot_deb_amt += leg_debit_val
-                tot_cred_amt += leg_credit_val
-                sales_data.append({"id":coa.id,"name":coa.accnt_name ,"email":"N/A","phone":"N/A","debitAmt":leg_debit_val,"creditAmt":leg_credit_val,"acc_type":coa.account_mode})
+                sales_data.append({"id":coa.id,"name":coa.accnt_name ,"email":"N/A","phone":"N/A","debitAmt":debit_Amt,"creditAmt":credit_Amt,"acc_type":coa.account_mode})
             elif(str(coa.account_mode).strip() == "general"):
-                leg_debit_val = 0
-                leg_credit_val = 0
-                sum_gen_leg = Ledger.query.filter(and_(Ledger.ledger_account_no == coa.id ,Ledger.ledger_type == "general")).all()
-                for gen_leg_result in sum_gen_leg:
-                    leg_debit_val += int(gen_leg_result.ledger_debit_amount)
-                    leg_credit_val += int(gen_leg_result.ledger_credit_amount)
-                tot_deb_amt += leg_debit_val
-                tot_cred_amt += leg_credit_val    
-                sales_data.append({"id":coa.id,"name":coa.accnt_name ,"email":"N/A","phone":"N/A","debitAmt":leg_debit_val,"creditAmt":leg_credit_val,"acc_type":coa.account_mode})
+                sales_data.append({"id":coa.id,"name":coa.accnt_name ,"email":"N/A","phone":"N/A","debitAmt":debit_Amt,"creditAmt":credit_Amt,"acc_type":coa.account_mode})
             elif(str(coa.account_mode).strip() == "party"):
-                get_party = Party.query.filter(Party.chart_accnt == int(coa.id)).one()
-                leg_debit_val = 0
-                leg_credit_val = 0
-                sum_gen_leg = Ledger.query.filter(and_(Ledger.ledger_account_no == coa.id ,Ledger.ledger_type == "party")).all()
-                for gen_leg_result in sum_gen_leg:
-                    leg_debit_val += int(gen_leg_result.ledger_debit_amount)
-                    leg_credit_val += int(gen_leg_result.ledger_credit_amount)  
-                tot_deb_amt += leg_debit_val
-                tot_cred_amt += leg_credit_val  
-                sales_data.append({"id":get_party.id,"name":get_party.english_name ,"email":get_party.contact_person,"phone":get_party.phone_number,"debitAmt":leg_debit_val,"creditAmt":leg_credit_val,"acc_type":coa.account_mode})
+                get_party = Party.query.filter(Party.chart_accnt == int(coa.id)).one() 
+                sales_data.append({"id":get_party.id,"name":get_party.english_name ,"email":get_party.contact_person,"phone":get_party.phone_number,"debitAmt":debit_Amt,"creditAmt":credit_Amt,"acc_type":coa.account_mode})
             elif(str(coa.account_mode).strip() == "vehicle"):
                 get_vehicle = Vehicles.query.filter(Vehicles.chart_accnt == int(coa.id)).one()
-                leg_debit_val = 0
-                leg_credit_val = 0
-                sum_gen_leg = Ledger.query.filter(and_(Ledger.ledger_account_no == coa.id ,Ledger.ledger_type == "vehicle")).all()
-                for gen_leg_result in sum_gen_leg:
-                    leg_debit_val += int(gen_leg_result.ledger_debit_amount)
-                    leg_credit_val += int(gen_leg_result.ledger_credit_amount)
-                tot_deb_amt += leg_debit_val
-                tot_cred_amt += leg_credit_val    
-                sales_data.append({"id":get_vehicle.id,"name":get_vehicle.vehicle_num ,"email":get_vehicle.driver_name,"phone":get_vehicle.phone_number,"debitAmt":leg_debit_val,"creditAmt":leg_credit_val,"acc_type":coa.account_mode})
+                sales_data.append({"id":get_vehicle.id,"name":get_vehicle.vehicle_num ,"email":get_vehicle.driver_name,"phone":get_vehicle.phone_number,"debitAmt":debit_Amt,"creditAmt":credit_Amt,"acc_type":coa.account_mode})
             elif(str(coa.account_mode).strip() == "client"):
                 get_client = Clients.query.filter(Clients.chart_accnt == int(coa.id)).one()
-                leg_debit_val = 0
-                leg_credit_val = 0
-                sum_gen_leg = Ledger.query.filter(and_(Ledger.ledger_account_no == coa.id ,Ledger.ledger_type == "client")).all()
-                for gen_leg_result in sum_gen_leg:
-                    leg_debit_val += int(gen_leg_result.ledger_debit_amount)
-                    leg_credit_val += int(gen_leg_result.ledger_credit_amount)    
-                tot_deb_amt += leg_debit_val
-                tot_cred_amt += leg_credit_val
-                sales_data.append({"id":get_client.id,"name":get_client.client_name ,"email":get_client.client_email,"phone":get_client.client_phone,"debitAmt":leg_debit_val,"creditAmt":leg_credit_val,"acc_type":coa.account_mode})
+                sales_data.append({"id":get_client.id,"name":get_client.client_name ,"email":get_client.client_email,"phone":get_client.client_phone,"debitAmt":debit_Amt,"creditAmt":credit_Amt,"acc_type":coa.account_mode})
             elif(str(coa.account_mode).strip() == "supplier"):
                 get_supplier = Supplier.query.filter(Supplier.chart_accnt == int(coa.id)).one()
-                leg_debit_val = 0
-                leg_credit_val = 0
-                sum_gen_leg = Ledger.query.filter(and_(Ledger.ledger_account_no == coa.id ,Ledger.ledger_type == "supplier")).all()
-                for gen_leg_result in sum_gen_leg:
-                    leg_debit_val += int(gen_leg_result.ledger_debit_amount)
-                    leg_credit_val += int(gen_leg_result.ledger_credit_amount)    
-                tot_deb_amt += leg_debit_val
-                tot_cred_amt += leg_credit_val
-                sales_data.append({"id":get_supplier.id,"name":get_supplier.suppl_name ,"email":get_supplier.suppl_email,"phone":get_supplier.suppl_phone,"debitAmt":leg_debit_val,"creditAmt":leg_credit_val,"acc_type":coa.account_mode})
+                sales_data.append({"id":get_supplier.id,"name":get_supplier.suppl_name ,"email":get_supplier.suppl_email,"phone":get_supplier.suppl_phone,"debitAmt":debit_Amt,"creditAmt":credit_Amt,"acc_type":coa.account_mode})
         c = canvas.Canvas(path, pagesize=A4)
         c.setTitle("ALL PARTY REPORT")
         mystyle = ParagraphStyle('my style',fontName='Times-Roman',fontSize=10,leading=15)
@@ -182,30 +142,20 @@ class PDF_AllGoodsOilsReport():
         tot_deb_amt = 0
         coa_list = ChartOfAccount.query.filter(ChartOfAccount.userid == userid).all()
         for coa in coa_list:
+            debitAmt = 0
+            creditAmt = 0
+            if(int(coa.networth) < 0):
+                debitAmt = abs(int(coa.networth))
+            else:
+                creditAmt = abs(int(coa.networth))
             if(str(coa.account_mode).strip() == "party"):
                 get_party = Party.query.filter(Party.chart_accnt == int(coa.id)).one()
-                if(str(get_party.type).strip() == str(report_type).strip()):
-                    leg_debit_val = 0
-                    leg_credit_val = 0
-                    sum_gen_leg = Ledger.query.filter(and_(Ledger.ledger_account_no == coa.id ,Ledger.ledger_type == "party")).all()
-                    for gen_leg_result in sum_gen_leg:
-                        leg_debit_val += int(gen_leg_result.ledger_debit_amount)
-                        leg_credit_val += int(gen_leg_result.ledger_credit_amount)  
-                    tot_deb_amt += leg_debit_val
-                    tot_cred_amt += leg_credit_val  
-                    sales_data.append({"id":get_party.id,"name":get_party.english_name ,"email":get_party.contact_person,"phone":get_party.phone_number,"debitAmt":leg_debit_val,"creditAmt":leg_credit_val,"acc_type":coa.account_mode})
+                if(str(get_party.type).strip() == str(report_type).strip()): 
+                    sales_data.append({"id":get_party.id,"name":get_party.english_name ,"email":get_party.contact_person,"phone":get_party.phone_number,"debitAmt":debitAmt,"creditAmt":creditAmt,"acc_type":coa.account_mode})
             elif(str(coa.account_mode).strip() == "vehicle"):
                 get_vehicle = Vehicles.query.filter(Vehicles.chart_accnt == int(coa.id)).one()
-                if(str(get_vehicle.veh_type).strip() == str(report_type).strip()):
-                    leg_debit_val = 0
-                    leg_credit_val = 0
-                    sum_gen_leg = Ledger.query.filter(and_(Ledger.ledger_account_no == coa.id ,Ledger.ledger_type == "vehicle")).all()
-                    for gen_leg_result in sum_gen_leg:
-                        leg_debit_val += int(gen_leg_result.ledger_debit_amount)
-                        leg_credit_val += int(gen_leg_result.ledger_credit_amount)
-                    tot_deb_amt += leg_debit_val
-                    tot_cred_amt += leg_credit_val    
-                    sales_data.append({"id":get_vehicle.id,"name":get_vehicle.vehicle_num ,"email":get_vehicle.driver_name,"phone":get_vehicle.phone_number,"debitAmt":leg_debit_val,"creditAmt":leg_credit_val,"acc_type":coa.account_mode})
+                if(str(get_vehicle.veh_type).strip() == str(report_type).strip()):    
+                    sales_data.append({"id":get_vehicle.id,"name":get_vehicle.vehicle_num ,"email":get_vehicle.driver_name,"phone":get_vehicle.phone_number,"debitAmt":debitAmt,"creditAmt":creditAmt,"acc_type":coa.account_mode})
         c = canvas.Canvas(path, pagesize=A4)
         c.setTitle("ALL "+ str(report_type).strip().upper() +" REPORT")
         mystyle = ParagraphStyle('my style',fontName='Times-Roman',fontSize=10,leading=15)
@@ -223,8 +173,8 @@ class PDF_AllGoodsOilsReport():
         c.drawString(100, 740, 'Name')
         c.drawString(220, 740, 'Email')
         c.drawString(320, 740, 'Phone')
-        c.drawString(420, 740, 'Credit Balance')
-        c.drawString(500, 740, 'Debit Balance')
+        c.drawString(400, 740, 'Total Receivable')
+        c.drawString(500, 740, 'Total Payable')
 
         c.setStrokeColor(HexColor('#1E4C9C'))
         c.line(24, 750, 575, 750)
@@ -249,8 +199,8 @@ class PDF_AllGoodsOilsReport():
                 c.drawString(100, line_y, str(sales_data[i]["name"]).strip().capitalize())
                 c.drawString(220, line_y, str(sales_data[i]["email"]).strip().capitalize())
                 c.drawString(320, line_y,str(sales_data[i]["phone"]).strip().capitalize())
-                c.drawRightString(480, line_y, str(sales_data[i]["creditAmt"]).strip())
-                c.drawRightString(550 , line_y, str(sales_data[i]["debitAmt"]).strip())   
+                c.drawRightString(460, line_y, str(sales_data[i]["debitAmt"]).strip())
+                c.drawRightString(550 , line_y, str(sales_data[i]["creditAmt"]).strip())   
                 line_y = line_y - 7
                 c.line(24, line_y, 571, line_y)
         
@@ -260,8 +210,8 @@ class PDF_AllGoodsOilsReport():
         c.setFillColor(HexColor('#ffffff'))
         c.setFont('Helvetica-Bold', 8)
         c.drawString(80, line_y - 10, str("Total").strip())
-        c.drawRightString(480, line_y - 10, "Rs. " + str(tot_cred_amt).strip())
-        c.drawRightString(550, line_y - 10, "Rs. " + str(tot_deb_amt).strip())
+        c.drawRightString(480, line_y - 10, "Rs. " + str(tot_deb_amt).strip())
+        c.drawRightString(550, line_y - 10, "Rs. " + str(tot_cred_amt).strip())
         
         #c.line(24, line_y-15, 571, line_y-15)
         # footer

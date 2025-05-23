@@ -2,6 +2,7 @@ from flask import Blueprint
 from flask import Flask, render_template, request, Response, send_file , redirect, session, url_for, jsonify
 from accountSubTypes import AccountSubTypes
 from accountTypes import AccountTypes
+from party import Party
 from chartofAccount import ChartOfAccount
 from clients import Clients
 from clnStkRtnItems import ClientReturnItems
@@ -32,10 +33,14 @@ api14 = Blueprint('api14', __name__)
 @api14.route('/manifest_goods_delete/<id>/<userid>', methods = ['DELETE'])
 def manifest_goods_delete(id, userid):
     del_manif_goods_set = GoodsNlc.query.get(int(id))
-    #get_prev_party = Party.query.get(int(str(del_manif_goods_set.parties)))
+    get_prev_party = Party.query.get(int(str(del_manif_goods_set.parties)))
     get_prev_vehicle = Vehicles.query.get(int(str(del_manif_goods_set.vehicle)))
-    RefreshTables.delete_Goods_Bill(int(id),userid)
-    # refresh_COA_Party(str(get_prev_party.chart_accnt))
+    del_ledger_data = Ledger.__table__.delete().where(Ledger.ledger_bill == str(del_manif_goods_set.bilty_no).strip())
+    db.session.execute(del_ledger_data)
+    db.session.delete(del_manif_goods_set)
+    db.session.flush()
+    db.session.commit()
+    RefreshCOA_Customer.refresh_COA_Party(str(get_prev_party.chart_accnt))
     RefreshCOA_Customer.refresh_COA_Vehicle(str(get_prev_vehicle.chart_accnt))
     RefreshCOA_Customer.refresh_COA_Comm(userid)
     return jsonify({"data":"deleted"})
@@ -43,10 +48,14 @@ def manifest_goods_delete(id, userid):
 @api14.route('/manifest_oils_delete/<id>/<userid>', methods = ['DELETE'])
 def manifest_oils_delete(id,userid):
     del_manif_oils_set = OilPso.query.get(int(id))
-    #get_prev_party = Party.query.get(int(str(del_manif_oils_set.parties)))
+    get_prev_party = Party.query.get(int(str(del_manif_oils_set.parties)))
     get_prev_vehicle = Vehicles.query.get(int(str(del_manif_oils_set.vehicle)))
-    RefreshTables.delete_Oils_Bill(int(id))
-    # refresh_COA_Party(str(get_prev_party.chart_accnt))
+    del_oil_ledger_data = Ledger.__table__.delete().where(Ledger.ledger_bill == str(del_manif_oils_set.bilty_no).strip())
+    db.session.execute(del_oil_ledger_data)
+    db.session.delete(del_manif_oils_set)
+    db.session.flush()
+    db.session.commit()
+    RefreshCOA_Customer.refresh_COA_Party(str(get_prev_party.chart_accnt))
     RefreshCOA_Customer.refresh_COA_Vehicle(str(get_prev_vehicle.chart_accnt))
     RefreshCOA_Customer.refresh_COA_Comm(userid)
     return jsonify({"data":"deleted"})

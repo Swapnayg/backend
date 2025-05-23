@@ -88,12 +88,11 @@ class PDF_StkDetailsReport():
 
         c.drawCentredString(50 , 690, 'SL.')
         c.drawCentredString(100, 690, 'Item Name')
-        c.drawCentredString(170, 690, 'Opening Qty')
-        c.drawCentredString(240, 690, 'Qty In')
-        c.drawCentredString(310, 690, 'Purchase Amt.')
-        c.drawCentredString(380 , 690, 'Qty Out')
-        c.drawCentredString(450, 690, 'Sale Amt.')
-        c.drawCentredString(520, 690, 'Closing Qty')
+        c.drawCentredString(170, 690, 'Qty In')
+        c.drawCentredString(250, 690, 'Purchase Amt.')
+        c.drawCentredString(330, 690, 'Qty Out')
+        c.drawCentredString(430 , 690, 'Sale Amt.')
+        c.drawCentredString(530, 690, 'Closing Qty')
 
         c.setStrokeColor(HexColor('#1E4C9C'))
         c.line(24, 675, 575, 675)
@@ -116,12 +115,11 @@ class PDF_StkDetailsReport():
                 line_y = line_y - 13
                 c.drawCentredString(50 , line_y, str(i+1))
                 c.drawCentredString(100, line_y, str(sales_data[i]["prd_Name"]).strip().capitalize())
-                c.drawCentredString(170, line_y, str(sales_data[i]["beg_Qty"]).strip())
-                c.drawCentredString(240, line_y,str(sales_data[i]["in_qty"]).strip().capitalize())
-                c.drawCentredString(310, line_y, str(sales_data[i]["pur_Amt"]).strip())
-                c.drawCentredString(380 , line_y, str(sales_data[i]["out_qty"]).strip())
-                c.drawCentredString(450, line_y, str(sales_data[i]["sale_Amt"]).strip())
-                c.drawCentredString(520, line_y, str(sales_data[i]["cls_qty"]).strip())
+                c.drawCentredString(170, line_y, str(sales_data[i]["in_qty"]).strip())
+                c.drawCentredString(250, line_y,str(sales_data[i]["pur_Amt"]).strip().capitalize())
+                c.drawCentredString(330, line_y, str(sales_data[i]["out_qty"]).strip())
+                c.drawCentredString(430 , line_y, str(sales_data[i]["sale_Amt"]).strip())
+                c.drawCentredString(530, line_y, str(sales_data[i]["cls_qty"]).strip())
                 line_y = line_y - 7
                 c.line(24, line_y, 571, line_y)
         
@@ -131,14 +129,14 @@ class PDF_StkDetailsReport():
         c.setFillColor(HexColor('#ffffff'))
         c.setFont('Helvetica-Bold', 8)
         c.drawString(80, line_y - 10, str("Total").strip())
-        c.drawCentredString(170, line_y - 10, str(tot_big_qty).strip())
-        c.drawCentredString(240, line_y - 10,str(tot_qty_in).strip().capitalize())
-        c.drawCentredString(310, line_y - 10,"Rs. " + str(tot_pur_amt).strip())
-        c.drawCentredString(380, line_y - 10, str(tot_qty_out).strip())
+        c.drawCentredString(170, line_y - 10, str(tot_qty_in).strip())
+        c.drawCentredString(250, line_y - 10,"Rs. " + str(tot_pur_amt).strip().capitalize())
+        c.drawCentredString(350, line_y - 10, str(tot_qty_out).strip())
         c.drawCentredString(450, line_y - 10, "Rs. " + str(tot_sale_amt).strip())
-        c.drawCentredString(520, line_y - 10, str(tot_qty_in).strip())
+        c.drawCentredString(550, line_y - 10, str(tot_qty_in).strip())
+
         
-        c.line(24, line_y-15, 571, line_y-15)
+        #c.line(24, line_y-15, 571, line_y-15)
         # footer
         c.setFillColor(HexColor('#1E4C9C'))
         c.setFont('Helvetica-Bold', 10)

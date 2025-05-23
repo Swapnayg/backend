@@ -70,58 +70,28 @@ def get_all_party_report_index():
     userid = int(data['userid'])
     coa_list = ChartOfAccount.query.filter(ChartOfAccount.userid == userid).all()
     for coa in coa_list:
+        debit_Amt = 0
+        credit_Amt = 0
+        if(int(coa.networth) < 0):
+            debit_Amt = int(coa.networth)
+        else:
+            credit_Amt = int(coa.networth)
         if(str(coa.account_mode).strip() == "commission"):
-            leg_debit_val = 0
-            leg_credit_val = 0
-            sum_comm_leg = Ledger.query.filter(and_(Ledger.ledger_account_no == coa.id ,Ledger.ledger_type == "commission")).all()
-            for comm_leg_result in sum_comm_leg:
-                leg_debit_val += int(comm_leg_result.ledger_debit_amount)
-                leg_credit_val += int(comm_leg_result.ledger_credit_amount)
-            party_rp_data.append({"id":coa.id,"name":coa.accnt_name ,"email":"N/A","phone":"N/A","debitAmt":leg_debit_val,"creditAmt":leg_credit_val,"acc_type":coa.account_mode})
+            party_rp_data.append({"id":coa.id,"name":coa.accnt_name ,"email":"N/A","phone":"N/A","debitAmt":debit_Amt,"creditAmt":credit_Amt,"acc_type":coa.account_mode})
         elif(str(coa.account_mode).strip() == "general"):
-            leg_debit_val = 0
-            leg_credit_val = 0
-            sum_gen_leg = Ledger.query.filter(and_(Ledger.ledger_account_no == coa.id ,Ledger.ledger_type == "general")).all()
-            for gen_leg_result in sum_gen_leg:
-                leg_debit_val += int(gen_leg_result.ledger_debit_amount)
-                leg_credit_val += int(gen_leg_result.ledger_credit_amount)    
-            party_rp_data.append({"id":coa.id,"name":coa.accnt_name ,"email":"N/A","phone":"N/A","debitAmt":leg_debit_val,"creditAmt":leg_credit_val,"acc_type":coa.account_mode})
+            party_rp_data.append({"id":coa.id,"name":coa.accnt_name ,"email":"N/A","phone":"N/A","debitAmt":debit_Amt,"creditAmt":credit_Amt,"acc_type":coa.account_mode})
         elif(str(coa.account_mode).strip() == "party"):
             get_party = Party.query.filter(Party.chart_accnt == int(coa.id)).one()
-            leg_debit_val = 0
-            leg_credit_val = 0
-            sum_gen_leg = Ledger.query.filter(and_(Ledger.ledger_account_no == coa.id ,Ledger.ledger_type == "party")).all()
-            for gen_leg_result in sum_gen_leg:
-                leg_debit_val += int(gen_leg_result.ledger_debit_amount)
-                leg_credit_val += int(gen_leg_result.ledger_credit_amount)    
-            party_rp_data.append({"id":get_party.id,"name":get_party.english_name ,"email":get_party.contact_person,"phone":get_party.phone_number,"debitAmt":leg_debit_val,"creditAmt":leg_credit_val,"acc_type":coa.account_mode})
+            party_rp_data.append({"id":get_party.id,"name":get_party.english_name ,"email":get_party.contact_person,"phone":get_party.phone_number,"debitAmt":debit_Amt,"creditAmt":credit_Amt,"acc_type":coa.account_mode})
         elif(str(coa.account_mode).strip() == "vehicle"):
             get_vehicle = Vehicles.query.filter(Vehicles.chart_accnt == int(coa.id)).one()
-            leg_debit_val = 0
-            leg_credit_val = 0
-            sum_gen_leg = Ledger.query.filter(and_(Ledger.ledger_account_no == coa.id ,Ledger.ledger_type == "vehicle")).all()
-            for gen_leg_result in sum_gen_leg:
-                leg_debit_val += int(gen_leg_result.ledger_debit_amount)
-                leg_credit_val += int(gen_leg_result.ledger_credit_amount)    
-            party_rp_data.append({"id":get_vehicle.id,"name":get_vehicle.vehicle_num ,"email":get_vehicle.driver_name,"phone":get_vehicle.phone_number,"debitAmt":leg_debit_val,"creditAmt":leg_credit_val,"acc_type":coa.account_mode})
+            party_rp_data.append({"id":get_vehicle.id,"name":get_vehicle.vehicle_num ,"email":get_vehicle.driver_name,"phone":get_vehicle.phone_number,"debitAmt":debit_Amt,"creditAmt":credit_Amt,"acc_type":coa.account_mode})
         elif(str(coa.account_mode).strip() == "client"):
             get_client = Clients.query.filter(Clients.chart_accnt == int(coa.id)).one()
-            leg_debit_val = 0
-            leg_credit_val = 0
-            sum_gen_leg = Ledger.query.filter(and_(Ledger.ledger_account_no == coa.id ,Ledger.ledger_type == "client")).all()
-            for gen_leg_result in sum_gen_leg:
-                leg_debit_val += int(gen_leg_result.ledger_debit_amount)
-                leg_credit_val += int(gen_leg_result.ledger_credit_amount)    
-            party_rp_data.append({"id":get_client.id,"name":get_client.client_name ,"email":get_client.client_email,"phone":get_client.client_phone,"debitAmt":leg_debit_val,"creditAmt":leg_credit_val,"acc_type":coa.account_mode})
+            party_rp_data.append({"id":get_client.id,"name":get_client.client_name ,"email":get_client.client_email,"phone":get_client.client_phone,"debitAmt":debit_Amt,"creditAmt":credit_Amt,"acc_type":coa.account_mode})
         elif(str(coa.account_mode).strip() == "supplier"):
             get_supplier = Supplier.query.filter(Supplier.chart_accnt == int(coa.id)).one()
-            leg_debit_val = 0
-            leg_credit_val = 0
-            sum_gen_leg = Ledger.query.filter(and_(Ledger.ledger_account_no == coa.id ,Ledger.ledger_type == "supplier")).all()
-            for gen_leg_result in sum_gen_leg:
-                leg_debit_val += int(gen_leg_result.ledger_debit_amount)
-                leg_credit_val += int(gen_leg_result.ledger_credit_amount)    
-            party_rp_data.append({"id":get_supplier.id,"name":get_supplier.suppl_name ,"email":get_supplier.suppl_email,"phone":get_supplier.suppl_phone,"debitAmt":leg_debit_val,"creditAmt":leg_credit_val,"acc_type":coa.account_mode})
+            party_rp_data.append({"id":get_supplier.id,"name":get_supplier.suppl_name ,"email":get_supplier.suppl_email,"phone":get_supplier.suppl_phone,"debitAmt":debit_Amt,"creditAmt":credit_Amt,"acc_type":coa.account_mode})
     return jsonify(party_rp_data)
 
 
@@ -132,22 +102,16 @@ def get_goods_oils_report_index():
     party_rp_data = []
     coa_list = ChartOfAccount.query.filter(ChartOfAccount.userid == userid).all()
     for coa in coa_list:
+        debitAmt = 0
+        creditAmt = 0
+        if(int(coa.networth) < 0):
+            debitAmt = abs(int(coa.networth))
+        else:
+            creditAmt = abs(int(coa.networth))
         if(str(coa.account_mode).strip() == "party"):
             get_party = Party.query.filter(Party.chart_accnt == int(coa.id)).one()
-            leg_debit_val = 0
-            leg_credit_val = 0
-            sum_gen_leg = Ledger.query.filter(and_(Ledger.ledger_account_no == coa.id ,Ledger.ledger_type == "party")).all()
-            for gen_leg_result in sum_gen_leg:
-                leg_debit_val += int(gen_leg_result.ledger_debit_amount)
-                leg_credit_val += int(gen_leg_result.ledger_credit_amount)    
-            party_rp_data.append({"id":get_party.id,"name":get_party.english_name ,"email":get_party.contact_person,"phone":get_party.phone_number,"debitAmt":leg_debit_val,"creditAmt":leg_credit_val,"acc_type":coa.account_mode, "manifest_type":get_party.type})
+            party_rp_data.append({"id":get_party.id,"name":get_party.english_name ,"email":get_party.contact_person,"phone":get_party.phone_number,"debitAmt":debitAmt,"creditAmt":creditAmt,"acc_type":coa.account_mode, "manifest_type":get_party.type})
         elif(str(coa.account_mode).strip() == "vehicle"):
             get_vehicle = Vehicles.query.filter(Vehicles.chart_accnt == int(coa.id)).one()
-            leg_debit_val = 0
-            leg_credit_val = 0
-            sum_gen_leg = Ledger.query.filter(and_(Ledger.ledger_account_no == coa.id ,Ledger.ledger_type == "vehicle")).all()
-            for gen_leg_result in sum_gen_leg:
-                leg_debit_val += int(gen_leg_result.ledger_debit_amount)
-                leg_credit_val += int(gen_leg_result.ledger_credit_amount)    
-            party_rp_data.append({"id":get_vehicle.id,"name":get_vehicle.vehicle_num ,"email":get_vehicle.driver_name,"phone":get_vehicle.phone_number,"debitAmt":leg_debit_val,"creditAmt":leg_credit_val,"acc_type":coa.account_mode, "manifest_type":get_vehicle.veh_type})
+            party_rp_data.append({"id":get_vehicle.id,"name":get_vehicle.vehicle_num ,"email":get_vehicle.driver_name,"phone":get_vehicle.phone_number,"debitAmt":debitAmt,"creditAmt":creditAmt,"acc_type":coa.account_mode, "manifest_type":get_vehicle.veh_type})
     return jsonify(party_rp_data)

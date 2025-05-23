@@ -1,5 +1,6 @@
 from sqlalchemy import and_, text 
 from flask import Flask, render_template, request, Response, send_file , redirect, session, url_for, jsonify
+import psycopg2 
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from users import Users
@@ -38,8 +39,8 @@ app = Flask(__name__)
 CORS(app)
 
 
-app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:Ajax24x7#365@database-2.ctogk8s4eyyp.ap-south-1.rds.amazonaws.com:5432/bma_db"
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:swapna234@localhost/bma_db'
+#app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:Ajax24x7#365@database-2.ctogk8s4eyyp.ap-south-1.rds.amazonaws.com:5432/bma_db"
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:swapna234@localhost/bma_db'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config["SESSION_PERMANENT"] = False     # Sessions expire when the browser is closed
@@ -131,6 +132,6 @@ def change_pass_index():
 def logout_index(): 
     session.clear()
     return jsonify({"data":"success"})
-   
+
 if __name__ == '__main__': 
 	app.run(host='0.0.0.0')

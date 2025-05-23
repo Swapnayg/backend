@@ -38,22 +38,16 @@ class PDF_SalesReport():
         for invoice in invoice_list:
             total_amt = float(invoice.grand_total)
             get_client = Clients.query.get(int(invoice.client_id))
-            all_ledger_data = Ledger2.query.filter(and_(Ledger2.ledger_bill == str(invoice.invoice_num).strip())).all()
-            paid_amt = 0
-            debit_amt = 0
-            rem_amt = 0
+            all_ledger_data = Ledger2.query.filter(and_(Ledger2.userid == userid,Ledger2.ledger_bill == str(invoice.invoice_num).strip())).order_by(Ledger2.id.desc()).limit(1).all()
+            paid_amt = 0.0
+            rem_amt = 0.0
+            bal_amt = 0.0
             inv_status = 'Pending'
-            for leg in all_ledger_data:
-                paid_amt = paid_amt + float(leg.ledger_credit_amount)
-                debit_amt = debit_amt + int(leg.ledger_debit_amount)
-                bal_amt = debit_amt - (paid_amt)
-                rem_amt = debit_amt - total_amt
-                if(rem_amt < 1):
-                    rem_amt = 0  
-                if(bal_amt < 0):
+            for ledg in all_ledger_data:
+                if(int(ledg.ledger_balance) == 0):
                     inv_status = "Paid"
             networth += bal_amt
-            sales_data.append({"id":invoice.id,"sale_date":invoice.invoice_date ,"invoiceNo":invoice.invoice_num,"clientName":invoice.client_name.client_name,"clientPhone":get_client.client_phone,"paidAmt":str(round(paid_amt, 2)),"rmnAmt":str(round(rem_amt, 2)),"balAmt":str(round(bal_amt, 2)), "inv_status":inv_status})
+            sales_data.append({"id":invoice.id,"sale_date":invoice.invoice_date ,"invoiceNo":invoice.invoice_num,"clientName":invoice.client_name.client_name,"clientPhone":get_client.client_phone,"paidAmt":str(ledg.ledger_credit_amount),"rmnAmt":str(round(rem_amt, 2)),"balAmt":str(ledg.ledger_balance), "inv_status":inv_status})
         c = canvas.Canvas(path, pagesize=A4)
         c.setTitle(str(cu_Name).strip().capitalize() + " SALES REPORT")
         mystyle = ParagraphStyle('my style',fontName='Times-Roman',fontSize=10,leading=15)

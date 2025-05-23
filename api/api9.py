@@ -13,133 +13,6 @@ from sqlalchemy import and_, extract, text
 
 api9 = Blueprint('api9', __name__)
 
-@api9.route('/oils_overall_data', methods=['POST'])
-def oils_overall_index(): 
-    data = request.get_json()
-    cm_gross_total = 0
-    cm_gross_purch_val = 0
-    userid = int(data['userid'])
-    current_year = datetime.datetime.now().year
-    current_month = datetime.datetime.now().month
-    today = datetime.datetime.now()
-    start_of_week = today - datetime.timedelta(days=today.weekday())
-    start_of_week = start_of_week.strftime("%Y-%m-%d")
-    today = today.strftime("%Y-%m-%d")
-    coa_list = ChartOfAccount.query.filter(ChartOfAccount.userid == userid).all()
-    total_payable = 0
-    total_receivable = 0
-    total_sum = 0
-    if((str(data['overallType']).strip()) == "year"):
-        for coa in coa_list:
-            if(str(coa.account_mode).strip() == "party"):
-                get_Party = Party.query.filter(Party.chart_accnt == int(coa.id)).one()
-                if(str(get_Party.type).strip() == "oil"):
-                    leg_debit_val = 0
-                    leg_credit_val = 0
-                    sum_gen_leg = db.session.query(Ledger).filter(and_(extract('year', Ledger.datetime)==current_year), Ledger.ledger_account_no == coa.id ,Ledger.ledger_type == "party").all()
-                    for gen_leg_result in sum_gen_leg:
-                        leg_debit_val += int(gen_leg_result.ledger_debit_amount)
-                        leg_credit_val += int(gen_leg_result.ledger_credit_amount)
-                    total_payable += int(leg_debit_val) 
-                    total_receivable += int(leg_credit_val)     
-            elif(str(coa.account_mode).strip() == "vehicle"):
-                get_Vehicle = Vehicles.query.filter(Vehicles.chart_accnt == int(coa.id)).one()
-                if(str(get_Vehicle.veh_type).strip() == "oil"):
-                    leg_debit_val = 0
-                    leg_credit_val = 0
-                    sum_gen_leg =  db.session.query(Ledger).filter(and_(extract('year', Ledger.datetime)==current_year), Ledger.ledger_account_no == coa.id ,Ledger.ledger_type == "vehicle").all()
-                    for gen_leg_result in sum_gen_leg:
-                        leg_debit_val += int(gen_leg_result.ledger_debit_amount)
-                        leg_credit_val += int(gen_leg_result.ledger_credit_amount)  
-                    total_payable += int(leg_debit_val) 
-                    total_receivable += int(leg_credit_val)
-    elif((str(data['overallType']).strip()) == "month"):
-        for coa in coa_list:
-            if(str(coa.account_mode).strip() == "party"):
-                get_Party = Party.query.filter(Party.chart_accnt == int(coa.id)).one()
-                if(str(get_Party.type).strip() == "oil"):
-                    leg_debit_val = 0
-                    leg_credit_val = 0
-                    sum_gen_leg = db.session.query(Ledger).filter(and_(extract('month', Ledger.datetime)==current_month), Ledger.ledger_account_no == coa.id ,Ledger.ledger_type == "party").all()
-                    for gen_leg_result in sum_gen_leg:
-                        leg_debit_val += int(gen_leg_result.ledger_debit_amount)
-                        leg_credit_val += int(gen_leg_result.ledger_credit_amount)
-                    total_payable += int(leg_debit_val) 
-                    total_receivable += int(leg_credit_val)     
-            elif(str(coa.account_mode).strip() == "vehicle"):
-                get_Vehicle = Vehicles.query.filter(Vehicles.chart_accnt == int(coa.id)).one()
-                if(str(get_Vehicle.veh_type).strip() == "oil"):
-                    leg_debit_val = 0
-                    leg_credit_val = 0
-                    sum_gen_leg =  db.session.query(Ledger).filter(and_(extract('month', Ledger.datetime)==current_month), Ledger.ledger_account_no == coa.id ,Ledger.ledger_type == "vehicle").all()
-                    for gen_leg_result in sum_gen_leg:
-                        leg_debit_val += int(gen_leg_result.ledger_debit_amount)
-                        leg_credit_val += int(gen_leg_result.ledger_credit_amount)  
-                    total_payable += int(leg_debit_val) 
-                    total_receivable += int(leg_credit_val)
-    elif((str(data['overallType']).strip()) == "week"):
-        for coa in coa_list:
-            if(str(coa.account_mode).strip() == "party"):
-                get_Party = Party.query.filter(Party.chart_accnt == int(coa.id)).one()
-                if(str(get_Party.type).strip() == "oil"):
-                    leg_debit_val = 0
-                    leg_credit_val = 0
-                    sum_gen_leg_txt = text("SELECT * FROM public.ledger Where datetime >= '"+ start_of_week +"' AND datetime < '"+today+"' AND ledger_account_no = "+str(coa.id)+" AND ledger_type = 'party'") 
-                    sum_gen_leg = db.session.execute(sum_gen_leg_txt)
-                    for gen_leg_result in sum_gen_leg:
-                        leg_debit_val += int(gen_leg_result.ledger_debit_amount)
-                        leg_credit_val += int(gen_leg_result.ledger_credit_amount)
-                    total_payable += int(leg_debit_val) 
-                    total_receivable += int(leg_credit_val)     
-            elif(str(coa.account_mode).strip() == "vehicle"):
-                get_Vehicle = Vehicles.query.filter(Vehicles.chart_accnt == int(coa.id)).one()
-                if(str(get_Vehicle.veh_type).strip() == "oil"):
-                    leg_debit_val = 0
-                    leg_credit_val = 0
-                    sum_gen_leg_txt = text("SELECT * FROM public.ledger Where datetime >= '"+ start_of_week +"' AND datetime < '"+today+"' AND ledger_account_no = "+str(coa.id)+" AND ledger_type = 'vehicle'") 
-                    sum_gen_leg = db.session.execute(sum_gen_leg_txt)
-                    for gen_leg_result in sum_gen_leg:
-                        leg_debit_val += int(gen_leg_result.ledger_debit_amount)
-                        leg_credit_val += int(gen_leg_result.ledger_credit_amount)  
-                    total_payable += int(leg_debit_val) 
-                    total_receivable += int(leg_credit_val)
-    elif((str(data['overallType']).strip()) == "today"):
-        for coa in coa_list:
-            if(str(coa.account_mode).strip() == "party"):
-                get_Party = Party.query.filter(Party.chart_accnt == int(coa.id)).one()
-                if(str(get_Party.type).strip() == "oil"):
-                    leg_debit_val = 0
-                    leg_credit_val = 0
-                    sum_gen_leg_txt = text("SELECT * FROM public.ledger Where datetime = '"+ today +"' AND ledger_account_no = "+str(coa.id)+" AND ledger_type = 'party'") 
-                    sum_gen_leg = db.session.execute(sum_gen_leg_txt)
-                    for gen_leg_result in sum_gen_leg:
-                        leg_debit_val += int(gen_leg_result.ledger_debit_amount)
-                        leg_credit_val += int(gen_leg_result.ledger_credit_amount)
-                    total_payable += int(leg_debit_val) 
-                    total_receivable += int(leg_credit_val)     
-            elif(str(coa.account_mode).strip() == "vehicle"):
-                get_Vehicle = Vehicles.query.filter(Vehicles.chart_accnt == int(coa.id)).one()
-                if(str(get_Vehicle.veh_type).strip() == "oil"):
-                    leg_debit_val = 0
-                    leg_credit_val = 0
-                    sum_gen_leg_txt = text("SELECT * FROM public.ledger Where datetime = '"+ today +"' AND ledger_account_no = "+str(coa.id)+" AND ledger_type = 'vehicle'") 
-                    sum_gen_leg = db.session.execute(sum_gen_leg_txt)
-                    for gen_leg_result in sum_gen_leg:
-                        leg_debit_val += int(gen_leg_result.ledger_debit_amount)
-                        leg_credit_val += int(gen_leg_result.ledger_credit_amount)  
-                    total_payable += int(leg_debit_val) 
-                    total_receivable += int(leg_credit_val)
-    total_sum =  total_payable + total_receivable  
-    try:
-        per_total_pay = (total_payable / total_sum) * 100
-    except:
-        per_total_pay = 0
-    try:
-        per_total_rec = (total_receivable / total_sum) * 100
-    except:
-        per_total_rec = 0
-    return jsonify({"totalpay":int(total_payable), "totalRec":total_receivable, "perTotalPay":round(per_total_pay),  "perTotalPRec":round(per_total_rec)})
-
 def sum_array(arr):
     total = sum(arr)
     return total
@@ -249,12 +122,15 @@ def oils_dashboard_index(userid):
         ledg_bal = 0
         if ("OIL_" in str(ledg_i.ledger_bill).strip()):
             try:
-                inv_data = OilPso.query.filter(OilPso.bilty_no == str(ledg_i.ledger_bill).strip()).one()
+                inv_data = OilPso.query.filter(and_(OilPso.bilty_no == str(ledg_i.ledger_bill).strip(), OilPso.userid == userid)).one()
                 if(str(ledg_i.ledger_type).strip() == "vehicle"):
                     total_bal = int(inv_data.vehicle_freight)
                     ledg_bal = total_bal - int(ledg_i.ledger_credit_amount)
+                elif(str(ledg_i.ledger_type).strip() == "party"):
+                    total_bal = int(inv_data.freight)
+                    ledg_bal = total_bal - int(ledg_i.ledger_credit_amount)
                 elif(str(ledg_i.ledger_type).strip() == "commission"):
-                    total_bal = inv_data.commission
+                    total_bal = int(inv_data.commission)
                     ledg_bal = total_bal - int(ledg_i.ledger_credit_amount)
             except:  
                 print("not found")

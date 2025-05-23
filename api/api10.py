@@ -3,6 +3,13 @@ from flask import Blueprint
 from flask import Flask, render_template, request, Response, send_file , redirect, session, url_for, jsonify
 from accountSubTypes import AccountSubTypes
 from accountTypes import AccountTypes
+from clients import Clients
+from supplier import Supplier
+from vehicles import Vehicles
+from clnstkrtn import TblClnStockRtn
+from goodsnlc import GoodsNlc
+from oilpso import OilPso
+from stkRtn import TblStockRtn
 from chartofAccount import ChartOfAccount
 from citysetup import CitySetup
 from inwarehouse import InvWarehouses
@@ -162,36 +169,137 @@ def sub_accntType_create():
     return jsonify({"data":sub_accnt_type_result.inserted_primary_key[0]})
 
 @api10.route('/add_cashbook_values', methods=['POST']) 
-def ledger_cash_add_create(): 
+def ledger_cash_add_create():
     data = request.get_json()
     userid = int(data['userid'])
     ledger_balance = 0
     get_chart_accnt = ChartOfAccount.query.filter(ChartOfAccount.id == int(str(data['ac_sel_id']))).one()
+    last_balance = 0
+    if(data['ac_party_type'] == "party" or data['ac_party_type'] == "vehicle"):
+        ledger_rec = Ledger.query.filter(and_(Ledger.userid == userid,Ledger.ledger_bill == str(data['leg_inv_num']).strip(),Ledger.ledger_type == str(data['ac_party_type']).strip())).order_by(Ledger.id.desc()).limit(1).all()
+        last_balance = int(ledger_rec[0].ledger_balance)
+    elif(data['ac_party_type'] == "general" or data['ac_party_type'] == "commission"):
+        last_balance = int(get_chart_accnt.networth)
+    elif(data['ac_party_type'] == "supplier" or data['ac_party_type'] == "client"):
+        ledger_rec_suppl = Ledger2.query.filter(and_(Ledger2.userid == userid,Ledger2.ledger_bill == str(data['leg_inv_num']).strip(), Ledger2.ledger_type == str(data['ac_party_type']).strip())).order_by(Ledger2.id.desc()).all()
+        last_balance = int(ledger_rec_suppl[0].ledger_balance)
     if(data['ac_acc_Type'] == "in"):
-        ledger_balance = int(get_chart_accnt.networth) + int(str(data['ac_amount']))
+        ledger_balance = last_balance + int(str(data['ac_amount']))
     elif(data['ac_acc_Type'] == "out"):
-        ledger_balance = int(get_chart_accnt.networth) - int(str(data['ac_amount']))
+        ledger_balance = last_balance - int(str(data['ac_amount']))
     if(data['ac_party_type'] == "party" or data['ac_party_type'] == "vehicle" or data['ac_party_type'] == "general" or data['ac_party_type'] == "commission"):
+        if(data['ac_party_type'] == "party"):
+            party_ledg_data_txt = text("SELECT  sum(CAST(ledger_debit_amount AS DECIMAL(10,0))) as debit, sum(CAST(ledger_credit_amount AS DECIMAL(10,0))) as credit FROM public.ledger Where ledger_bill = '"+str(data['leg_inv_num']).strip()+"' and ledger_type ='"+str(data['ac_party_type']).strip()+"';") 
+            party_ledg_data = db.session.execute(party_ledg_data_txt)
+            bal_debit = 0
+            bal_credit = 0
+            for lg_data in party_ledg_data:
+                bal_debit = int(lg_data.debit)
+                bal_credit = int(lg_data.credit)
+            bal_debit = bal_debit +  int(data['ac_debit_amt'])
+            bal_credit = bal_credit +  int(data['ac_credit_amt'])
+            remng_Amt  = bal_debit - bal_credit
+            bill_status = ""
+            if(remng_Amt <= 0 ):
+                bill_status = "paid"
+            elif(bal_credit == 0):
+                bill_status = "pending"
+            else:
+                bill_status = "partial"
+            if "GD_" in str(data['leg_inv_num']).strip():
+                goods_manif = GoodsNlc.query.filter(GoodsNlc.bilty_no == str(data['leg_inv_num']).strip()).one()
+                goods_manif.bill_status = bill_status
+                db.session.flush()
+                db.session.commit()
+            elif "OIL_" in str(data['leg_inv_num']).strip():
+                oils_manif = OilPso.query.filter(OilPso.bilty_no == str(data['leg_inv_num']).strip()).one()
+                oils_manif.bill_status = bill_status
+                db.session.flush()
+                db.session.commit()
         sadd_ledger_cash = insert(Ledger).values(ledger_account_no=data['ac_sel_id'],ledger_party_name=data['ac_sel_party'], ledger_gen_date=data['ac_cashbookDate'],ledger_debit_amount=data['ac_debit_amt'], ledger_credit_amount=data['ac_credit_amt'], ledger_bill=data['leg_inv_num'],ledger_method=data['ac_acc_Method'], ledger_balance=ledger_balance,ledger_bill_no=data['ac_bill_no'],ledger_type=data['ac_party_type'],ledger_descp=data['ac_description'], userid = userid)
         sub_ledger_cash_result = db.session.execute(sadd_ledger_cash)
         db.session.commit()
     elif(data['ac_party_type'] == "supplier" or data['ac_party_type'] == "client" ):
+        party_ledg_data_txt = text("SELECT  sum(CAST(ledger_debit_amount AS DECIMAL(10,0))) as debit, sum(CAST(ledger_credit_amount AS DECIMAL(10,0))) as credit FROM public.ledger2 Where ledger_bill = '"+str(data['leg_inv_num']).strip()+"' and ledger_type ='"+str(data['ac_party_type']).strip()+"';") 
+        party_ledg_data = db.session.execute(party_ledg_data_txt)
+        bal_debit = 0
+        bal_credit = 0
+        for lg_data in party_ledg_data:
+            bal_debit = int(lg_data.debit)
+            bal_credit = int(lg_data.credit)
+        bal_debit = bal_debit +  int(data['ac_debit_amt'])
+        bal_credit = bal_credit +  int(data['ac_credit_amt'])
+        remng_Amt  = bal_debit - bal_credit
+        bill_status = ""
+        if(remng_Amt <= 0 ):
+            bill_status = "paid"
+        elif(bal_credit == 0):
+            bill_status = "pending"
+        else:
+            bill_status = "partial"
+        if "INV_" in str(data['leg_inv_num']).strip():
+            invoice_manif = TblInvoice.query.filter(TblInvoice.invoice_num == str(data['leg_inv_num']).strip()).one()
+            invoice_manif.invoice_status = bill_status
+            db.session.flush()
+            db.session.commit()
+        elif "CUST_" in str(data['leg_inv_num']).strip():
+            cust_manif = TblClnStockRtn.query.filter(TblClnStockRtn.stock_num == str(data['leg_inv_num']).strip()).one()
+            cust_manif.stock_status = bill_status
+            db.session.flush()
+            db.session.commit()
+        elif "ORD_" in str(data['leg_inv_num']).strip():
+            order_manif = TblOrder.query.filter(TblOrder.order_num == str(data['leg_inv_num']).strip()).one()
+            order_manif.order_status = bill_status
+            db.session.flush()
+            db.session.commit()
+        elif "STK_" in str(data['leg_inv_num']).strip():
+            stk_manif = TblStockRtn.query.filter(TblStockRtn.stock_num == str(data['leg_inv_num']).strip()).one()
+            stk_manif.stock_status = bill_status
+            db.session.flush()
+            db.session.commit()
         sadd_ledger_custom = insert(Ledger2).values(ledger_account_no=data['ac_sel_id'],ledger_party_name=data['ac_sel_party'], ledger_gen_date=data['ac_cashbookDate'],ledger_debit_amount=data['ac_debit_amt'], ledger_credit_amount=data['ac_credit_amt'], ledger_bill=data['leg_inv_num'],ledger_method=data['ac_acc_Method'], ledger_balance=ledger_balance,ledger_bill_no=data['ac_bill_no'],ledger_type=data['ac_party_type'],ledger_descp=data['ac_description'], userid = userid)
         sub_ledger_cash_result = db.session.execute(sadd_ledger_custom)
         db.session.commit()
     if(data['ac_party_type'] == "party"):
-        RefreshCOA_Customer.refresh_COA_Party(str(data['ac_sel_id']))
+        get_party = Party.query.filter(Party.chart_accnt == int(get_chart_accnt.id)).one()
+        if(data['ac_acc_Type'] == "in"):
+            get_party.net_amount = int(get_party.net_amount) + int(str(data['ac_amount']))
+            get_chart_accnt.networth = int(get_chart_accnt.networth) + int(str(data['ac_amount']))
+        elif(data['ac_acc_Type'] == "out"):
+            get_party.net_amount = int(get_party.net_amount) - int(str(data['ac_amount']))
+            get_chart_accnt.networth = int(get_chart_accnt.networth) - int(str(data['ac_amount']))
     elif(data['ac_party_type'] == "vehicle"):
-        RefreshCOA_Customer.refresh_COA_Vehicle(str(data['ac_sel_id']))
-    elif(data['ac_party_type'] == "general"):
-        RefreshCOA_Customer.refresh_COA_General(str(data['ac_sel_id']))
-    elif(data['ac_party_type'] == "commission"):
-        RefreshCOA_Customer.refresh_COA_Comm(userid)
-    elif(data['ac_party_type'] == "client"):
-        RefreshCOA_Customer.refresh_COA_Customer(str(get_chart_accnt.id))
+        get_vehicle = Vehicles.query.filter(Vehicles.chart_accnt == int(get_chart_accnt.id)).one()
+        if(data['ac_acc_Type'] == "in"):
+            get_vehicle.net_worth = int(get_vehicle.net_worth) + int(str(data['ac_amount']))
+            get_chart_accnt.networth = int(get_chart_accnt.networth) + int(str(data['ac_amount']))
+        elif(data['ac_acc_Type'] == "out"):
+            get_vehicle.net_worth = int(get_vehicle.net_worth) - int(str(data['ac_amount']))
+            get_chart_accnt.networth = int(get_chart_accnt.networth) - int(str(data['ac_amount']))
+    elif(data['ac_party_type'] == "general" or data['ac_party_type'] == "commission"):	
+        if(data['ac_acc_Type'] == "in"):
+            get_chart_accnt.networth = int(get_chart_accnt.networth) + int(str(data['ac_amount']))
+        elif(data['ac_acc_Type'] == "out"):
+            get_chart_accnt.networth = int(get_chart_accnt.networth) - int(str(data['ac_amount']))
     elif(data['ac_party_type'] == "supplier"):
-        RefreshCOA_Customer.refresh_COA_Supplier(str(get_chart_accnt.id))
-    return jsonify({"data":sub_ledger_cash_result.inserted_primary_key[0]})
+        get_supllier = Supplier.query.filter(Supplier.chart_accnt == int(get_chart_accnt.id)).one()
+        if(data['ac_acc_Type'] == "in"):
+            get_chart_accnt.networth = int(get_chart_accnt.networth) + int(str(data['ac_amount']))
+            get_supllier.networth = int(get_supllier.networth) + int(str(data['ac_amount']))
+        elif(data['ac_acc_Type'] == "out"):
+            get_supllier.networth = int(get_supllier.networth) - int(str(data['ac_amount']))  
+            get_chart_accnt.networth = int(get_chart_accnt.networth) - int(str(data['ac_amount']))  
+    elif(data['ac_party_type'] == "client"):
+        get_client = Clients.query.filter(Clients.chart_accnt == int(get_chart_accnt.id)).one()
+        if(data['ac_acc_Type'] == "in"):
+            get_chart_accnt.networth = int(get_chart_accnt.networth) + int(str(data['ac_amount']))
+            get_client.networth = int(get_client.networth) + int(str(data['ac_amount']))
+        elif(data['ac_acc_Type'] == "out"):
+            get_client.networth = int(get_client.networth) - int(str(data['ac_amount']))  
+            get_chart_accnt.networth = int(get_chart_accnt.networth) - int(str(data['ac_amount']))  
+    db.session.flush()
+    db.session.commit()   
+    return jsonify({"data":"sub_ledger_cash_result.inserted_primary_key[0]"})
 
 
 @api10.route('/add_chart_of_account_values', methods=['POST']) 

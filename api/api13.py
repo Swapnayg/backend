@@ -12,7 +12,6 @@ from ledger import Ledger
 from ledger2 import Ledger2
 from oilpso import OilPso
 from party import Party
-from partybill import PartyBill
 from purchItems import PurchItems
 from quoteitems import QuoteItems
 from reccIncoice import TblReccInvoice
@@ -90,32 +89,9 @@ def vehicle_delete(id,userid):
     if(str(del_vehicle_set.veh_type).strip() == "goods"):
         vehicle_goods = GoodsNlc.query.filter(GoodsNlc.vehicle == int(id)).all()
         for v_goods in vehicle_goods:
-            if(v_goods != "pending"):
-                party_bills = PartyBill.query.filter(PartyBill.party_id == int(v_goods.parties)).all()
-                for p_bilty in party_bills:
-                    get_party = Party.query.get(int(str(p_bilty.party_id)))
-                    prev_bilties = str(p_bilty.invoice_bilties).strip()
-                    prev_biltiesli = prev_bilties.split(",")
-                    if str(v_goods.id) in prev_biltiesli:
-                        new_bill_sub_total = 0
-                        prev_biltiesli.remove(str(v_goods.id))
-                        for p_bilty_n in prev_biltiesli:
-                            vah_goods_new = GoodsNlc.query.filter(GoodsNlc.id == int(p_bilty_n)).one()
-                            new_bill_sub_total = new_bill_sub_total + int(str(vah_goods_new.freight).strip())
-                        ledger_values = Ledger.query.filter(and_(Ledger.ledger_account_no == int(str(get_party.chart_accnt)),Ledger.ledger_gen_date == p_bilty.invoice_date,Ledger.ledger_bill == p_bilty.invoice_no,Ledger.ledger_type == "party" )).one()
-                        ledger_values.ledger_debit_amount = str(new_bill_sub_total)
-                        ledger_values.ledger_balance = str(new_bill_sub_total)
-                        p_bilty.invoice_balance = str(new_bill_sub_total)
-                        p_bilty.invoice_bilties = str(','.join(prev_biltiesli))
-                        db.session.flush()
-                        db.session.commit()
-                        if(len(prev_biltiesli) == 0):
-                            party_bill_dl =  PartyBill.__table__.delete().where(PartyBill.invoice_no == str(p_bilty.invoice_no).strip())
-                            del_led_pt_bill_data = Ledger.__table__.delete().where(Ledger.ledger_bill == str(p_bilty.invoice_no).strip())
-                            db.session.execute(del_led_pt_bill_data)
-                            db.session.execute(party_bill_dl)
-                        RefreshCOA_Customer.refresh_COA_Comm(userid)
-                        RefreshCOA_Customer.refresh_COA_Party(str(get_party.chart_accnt))
+            get_party = Party.query.get(int(str(vehicle_oilss.parties)))
+            RefreshCOA_Customer.refresh_COA_Comm(userid)
+            RefreshCOA_Customer.refresh_COA_Party(str(get_party.chart_accnt))
             del_ledger_data = Ledger.__table__.delete().where(Ledger.ledger_bill == str(v_goods.bilty_no).strip())
             db.session.execute(del_ledger_data)
         del_veh_goods_data = GoodsNlc.__table__.delete().where(GoodsNlc.vehicle == int(id))
@@ -123,32 +99,9 @@ def vehicle_delete(id,userid):
     elif(str(del_vehicle_set.veh_type).strip() == "oil"):
         vehicle_oilss = OilPso.query.filter(OilPso.vehicle == int(id)).all()
         for v_oils in vehicle_oilss:
-            if(v_oils != "pending"):
-                party_bills = PartyBill.query.filter(PartyBill.party_id == int(v_oils.parties)).all()
-                for p_bilty in party_bills:
-                    get_party = Party.query.get(int(str(p_bilty.party_id)))
-                    prev_bilties = str(p_bilty.invoice_bilties).strip()
-                    prev_biltiesli = prev_bilties.split(",")
-                    if str(v_oils.id) in prev_biltiesli:
-                        new_bill_sub_total = 0
-                        prev_biltiesli.remove(str(v_oils.id))
-                        for p_bilty_n in prev_biltiesli:
-                            vah_oils_new = GoodsNlc.query.filter(GoodsNlc.id == int(p_bilty_n)).one()
-                            new_bill_sub_total = new_bill_sub_total + int(str(vah_oils_new.freight).strip())
-                        ledger_values = Ledger.query.filter(and_(Ledger.ledger_account_no == int(str(get_party.chart_accnt)),Ledger.ledger_gen_date == p_bilty.invoice_date,Ledger.ledger_bill == p_bilty.invoice_no,Ledger.ledger_type == "party" )).one()
-                        ledger_values.ledger_debit_amount = str(new_bill_sub_total)
-                        ledger_values.ledger_balance = str(new_bill_sub_total)
-                        p_bilty.invoice_balance = str(new_bill_sub_total)
-                        p_bilty.invoice_bilties = str(','.join(prev_biltiesli))
-                        db.session.flush()
-                        db.session.commit()
-                        if(len(prev_biltiesli) == 0):
-                            party_bill_dl =  PartyBill.__table__.delete().where(PartyBill.invoice_no == str(p_bilty.invoice_no).strip())
-                            del_led_pt_bill_data = Ledger.__table__.delete().where(Ledger.ledger_bill == str(p_bilty.invoice_no).strip())
-                            db.session.execute(del_led_pt_bill_data)
-                            db.session.execute(party_bill_dl)
-                        RefreshCOA_Customer.refresh_COA_Comm(userid)
-                        RefreshCOA_Customer.refresh_COA_Party(str(get_party.chart_accnt))
+            get_party = Party.query.get(int(str(vehicle_oilss.parties)))
+            RefreshCOA_Customer.refresh_COA_Comm(userid)
+            RefreshCOA_Customer.refresh_COA_Party(str(get_party.chart_accnt))
             del_ledger_data = Ledger.__table__.delete().where(Ledger.ledger_bill == str(v_oils.bilty_no).strip())
             db.session.execute(del_ledger_data)
         del_veh_oils_data = OilPso.__table__.delete().where(OilPso.vehicle == int(id))

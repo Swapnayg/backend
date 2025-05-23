@@ -104,7 +104,7 @@ def purchase_order_create():
     sadd_order = insert(TblOrder).values(supplier_id= str(data['o_supplid']).strip().lower(), warehouse_id=data['o_warehouse'], order_num = data['o_invoiceNm'], order_refer = data['o_invoiceRef'], order_date = data['a_OInvDate'], order_due_date = data['o_OInvDueDate'], order_tax = data['o_OInvTax'], order_discount = data['o_OInvDisc'], total_tax = data['o_OInvTotax'], total_discount = data['o_OInvDist'], shipping =  data['o_OInvShipp'], grand_total =  data['o_OInvGrnTotal'], order_items =  len(data['o_items']),order_note =  data['o_OInvNote'],payment_terms =  data['o_payment_due'],update_stock =  data['o_update_stk'],order_status =  'pending', userid = userid)
     order_result = db.session.execute(sadd_order)
     ledger_balance = int(get_supplier.networth) + (int(round(float(data['o_OInvGrnTotal']))))
-    add_order_led = insert(Ledger2).values(ledger_account_no =get_supplier.chart_accnt, ledger_party_name= get_supplier.suppl_name, ledger_gen_date= data['a_OInvDate'], ledger_debit_amount = 0, ledger_credit_amount= (int(round(float(data['o_OInvGrnTotal'])))), ledger_bill=data['o_invoiceNm'],ledger_method= 'cash', ledger_balance= ledger_balance, ledger_type='supplier', ledger_descp="Supplier Payment Towards Invoice No: " +data['o_invoiceNm'], pay_start="started", userid = userid)
+    add_order_led = insert(Ledger2).values(ledger_account_no =get_supplier.chart_accnt, ledger_party_name= get_supplier.suppl_name, ledger_gen_date= data['a_OInvDate'], ledger_debit_amount = 0, ledger_credit_amount= (int(round(float(data['o_OInvGrnTotal'])))), ledger_bill=data['o_invoiceNm'],ledger_method= 'cash', ledger_balance= (int(round(float(data['o_OInvGrnTotal'])))), ledger_type='supplier', ledger_descp="Supplier Payment Towards Invoice No: " +data['o_invoiceNm'], pay_start="started", userid = userid)
     add_suppl_led_result = db.session.execute(add_order_led)
     get_suppl_coa.networth = ledger_balance
     get_supplier.networth = ledger_balance
@@ -133,7 +133,7 @@ def stock_return_create():
         stk_return_result = db.session.execute(stk_sadd_return)
         frg_key_val = stk_return_result.inserted_primary_key[0]
         ledger_balance = int(get_supplier.networth) - (int(round(float(data['o_OInvGrnTotal']))))
-        add_stk_led = insert(Ledger2).values(ledger_account_no =get_supplier.chart_accnt, ledger_party_name= get_supplier.suppl_name, ledger_gen_date= data['a_OInvDate'], ledger_debit_amount = (int(round(float(data['o_OInvGrnTotal'])))), ledger_credit_amount= 0, ledger_bill=data['o_invoiceNm'],ledger_method= 'cash', ledger_balance= ledger_balance, ledger_type='supplier', ledger_descp="Supplier Payment Towards Invoice No: " +data['o_invoiceNm'], pay_start="started", userid = userid)
+        add_stk_led = insert(Ledger2).values(ledger_account_no =get_supplier.chart_accnt, ledger_party_name= get_supplier.suppl_name, ledger_gen_date= data['a_OInvDate'], ledger_debit_amount = (int(round(float(data['o_OInvGrnTotal'])))), ledger_credit_amount= 0, ledger_bill=data['o_invoiceNm'],ledger_method= 'cash', ledger_balance= -(int(round(float(data['o_OInvGrnTotal'])))), ledger_type='supplier', ledger_descp="Supplier Payment Towards Invoice No: " +data['o_invoiceNm'], pay_start="started", userid = userid)
         add_stk_led_result = db.session.execute(add_stk_led)
         get_suppl_coa.networth = ledger_balance
         get_supplier.networth = ledger_balance
@@ -154,7 +154,7 @@ def stock_return_create():
         cln_return_result = db.session.execute(cln_sadd_return)
         frg_key_val = cln_return_result.inserted_primary_key[0]
         ledger_balance = -(int(get_client.networth) + (int(round(float(data['o_OInvGrnTotal'])))))
-        add_cust_led = insert(Ledger2).values(ledger_account_no =get_client.chart_accnt, ledger_party_name= get_client.client_name, ledger_gen_date= data['a_OInvDate'], ledger_debit_amount = 0, ledger_credit_amount= (int(round(float(data['o_OInvGrnTotal'])))), ledger_bill=data['o_invoiceNm'],ledger_method= 'Cash', ledger_balance= ledger_balance, ledger_type='client', ledger_descp="Customer Payment Towards Bill No: " +data['o_invoiceNm'], pay_start="started", userid = userid)
+        add_cust_led = insert(Ledger2).values(ledger_account_no =get_client.chart_accnt, ledger_party_name= get_client.client_name, ledger_gen_date= data['a_OInvDate'], ledger_debit_amount = 0, ledger_credit_amount= (int(round(float(data['o_OInvGrnTotal'])))), ledger_bill=data['o_invoiceNm'],ledger_method= 'Cash', ledger_balance= (int(round(float(data['o_OInvGrnTotal'])))), ledger_type='client', ledger_descp="Customer Payment Towards Bill No: " +data['o_invoiceNm'], pay_start="started", userid = userid)
         add_cus_led_result = db.session.execute(add_cust_led)
         get_client_coa.networth = ledger_balance
         get_client.networth = ledger_balance
@@ -193,7 +193,7 @@ def add_invoice_create():
     sadd_invoice = insert(TblInvoice).values(client_id= str(data['o_clientid']).strip().lower(), warehouse_id=data['o_warehouse'], invoice_num = data['o_invoiceNm'], invoice_refer = data['o_invoiceRef'], invoice_date = data['a_OInvDate'], invoice_due_date = data['o_OInvDueDate'], invoice_tax = data['o_OInvTax'], invoice_discount = data['o_OInvDisc'], total_tax = data['o_OInvTotax'], total_discount = data['o_OInvDist'], shipping =  data['o_OInvShipp'], grand_total =  data['o_OInvGrnTotal'], invoice_items =  len(data['o_items']),invoice_note =  data['o_OInvNote'],payment_terms =  data['o_payment_due'],payment_currency =  data['o_payment_curr'],invoice_status =  'pending', userid = userid)
     return_result = db.session.execute(sadd_invoice)
     ledger_balance = - (int(get_client.networth) + (int(round(float(data['o_OInvGrnTotal'])))))
-    add_invoice_led = insert(Ledger2).values(ledger_account_no =get_client.chart_accnt, ledger_party_name= get_client.client_name, ledger_gen_date= data['a_OInvDate'], ledger_debit_amount = (int(round(float(data['o_OInvGrnTotal'])))), ledger_credit_amount= 0, ledger_bill=data['o_invoiceNm'],ledger_method= 'cash', ledger_balance= ledger_balance, ledger_type='client', ledger_descp="Customer Payment Towards Invoice No: " +data['o_invoiceNm'], pay_start="started", userid = userid)
+    add_invoice_led = insert(Ledger2).values(ledger_account_no =get_client.chart_accnt, ledger_party_name= get_client.client_name, ledger_gen_date= data['a_OInvDate'], ledger_debit_amount = (int(round(float(data['o_OInvGrnTotal'])))), ledger_credit_amount= 0, ledger_bill=data['o_invoiceNm'],ledger_method= 'cash', ledger_balance= -(int(round(float(data['o_OInvGrnTotal'])))), ledger_type='client', ledger_descp="Customer Payment Towards Invoice No: " +data['o_invoiceNm'], pay_start="started", userid = userid)
     add_invoice_led_result = db.session.execute(add_invoice_led)
     get_client_coa.networth = ledger_balance
     get_client.networth = ledger_balance
@@ -233,7 +233,7 @@ def manifesto_create():
     party_amt = int(data['G_BFreight'])
     comm_amt = int(data['G_BComm'])
     userid = int(data['userid'])
-    sadd_goods_manifest = insert(GoodsNlc).values(bilty_no= data['G_BiltyNo'], b_date= data['G_BiltyDate'], vehicle = data['G_BVehicle'], loading_point = data['G_loading'],unloading_point = data['G_unloading'], parties= data['G_Bparty'],weight= data['G_Bweight'],per_ton= data['G_BPerTon'], freight= party_amt,wrt_4_per_freight=data['G_BWRT4Freight'], commission= comm_amt, other_cahrges= data['G_BOtherCharges'], vehicle_freight= data['G_BvehicleFreight'], vehicle_balance= data['G_BvehicleBal'], advance_to_vehicle= data['G_BvehicleAdvance'],bill_status = 'pending',paid_by=data['G_paid_Method'], goods_gst=data['Goods_GST'], userid = userid)
+    sadd_goods_manifest = insert(GoodsNlc).values(bilty_no= data['G_BiltyNo'], b_date= data['G_BiltyDate'], vehicle = data['G_BVehicle'], loading_point = data['G_loading'],unloading_point = data['G_unloading'], parties= data['G_Bparty'],weight= data['G_Bweight'],per_ton= data['G_BPerTon'], freight= party_amt,wrt_4_per_freight=data['G_BWRT4Freight'], commission= comm_amt, other_cahrges= data['G_BOtherCharges'], vehicle_freight= data['G_BvehicleFreight'], vehicle_balance= data['G_BvehicleBal'], advance_to_vehicle= data['G_BvehicleAdvance'],bill_status = 'pending',paid_by=data['G_paid_Method'], goods_gst=data['Goods_GST'], userid = userid,  tax_per=data['per_wft'],  comm_per=data['per_comm'])
     goods_manif_result = db.session.execute(sadd_goods_manifest)
     get_party = Party.query.get(int(str(data['G_Bparty'])))
     get_vehicle = Vehicles.query.get(int(str(data['G_BVehicle'])))
@@ -247,29 +247,27 @@ def manifesto_create():
     if (int(vehicle_advance) != 0) :
         ledger_balance = int(get_vehicle_chart.networth) + (int(data['G_BvehicleFreight']))
         cash_balance = ledger_balance - int(data['G_BvehicleAdvance'])
-        add_vehicle_led = insert(Ledger).values(ledger_account_no =get_vehicle.chart_accnt, ledger_party_name= get_vehicle.vehicle_num, ledger_gen_date= data['G_BiltyDate'], ledger_debit_amount = 0, ledger_credit_amount= data['G_BvehicleFreight'], ledger_bill=data['G_BiltyNo'],ledger_method= data['G_paid_Method'], ledger_balance= ledger_balance, ledger_type='vehicle', ledger_descp="Payment Towards Bill No: " +data['G_BiltyNo'],pay_start="started", userid = userid)
+        add_vehicle_led = insert(Ledger).values(ledger_account_no =get_vehicle.chart_accnt, ledger_party_name= get_vehicle.vehicle_num, ledger_gen_date= data['G_BiltyDate'], ledger_debit_amount = 0, ledger_credit_amount= data['G_BvehicleFreight'], ledger_bill=data['G_BiltyNo'],ledger_method= data['G_paid_Method'], ledger_balance= data['G_BvehicleFreight'], ledger_type='vehicle', ledger_descp="Payment Towards Bill No: " +data['G_BiltyNo'],pay_start="started", userid = userid)
         add_vehicle_led_result = db.session.execute(add_vehicle_led)
-        add_cash_veh_adv = insert(Ledger).values(ledger_account_no =get_vehicle.chart_accnt, ledger_party_name= get_vehicle.vehicle_num, ledger_gen_date= data['G_BiltyDate'], ledger_debit_amount = str(data['G_BvehicleAdvance']).strip(), ledger_credit_amount= 0, ledger_bill=data['G_BiltyNo'],ledger_method= data['G_paid_Method'], ledger_balance= cash_balance, ledger_type='vehicle', ledger_descp="Payment Towards Bill No: " +data['G_BiltyNo'], userid = userid)    
+        add_cash_veh_adv = insert(Ledger).values(ledger_account_no =get_vehicle.chart_accnt, ledger_party_name= get_vehicle.vehicle_num, ledger_gen_date= data['G_BiltyDate'], ledger_debit_amount = str(data['G_BvehicleAdvance']).strip(), ledger_credit_amount= 0, ledger_bill=data['G_BiltyNo'],ledger_method= data['G_paid_Method'], ledger_balance= int(int(str(data['G_BvehicleFreight']).strip()) - int(str(data['G_BvehicleAdvance']).strip())), ledger_type='vehicle', ledger_descp="Payment Towards Bill No: " +data['G_BiltyNo'], userid = userid)    
         add_cash_veh_adv_result = db.session.execute(add_cash_veh_adv)
         get_vehicle_chart.networth = cash_balance
         get_vehicle.net_worth = cash_balance
     else:
         ledger_balance = int(get_vehicle_chart.networth) + (int(data['G_BvehicleFreight']))
-        add_vehicle_led = insert(Ledger).values(ledger_account_no =get_vehicle.chart_accnt, ledger_party_name= get_vehicle.vehicle_num, ledger_gen_date= data['G_BiltyDate'], ledger_debit_amount = 0, ledger_credit_amount= data['G_BvehicleFreight'], ledger_bill=data['G_BiltyNo'],ledger_method= data['G_paid_Method'], ledger_balance= ledger_balance, ledger_type='vehicle', ledger_descp="Vehicle Payment Towards Bill No: " +data['G_BiltyNo'], pay_start="started", userid = userid)
+        add_vehicle_led = insert(Ledger).values(ledger_account_no =get_vehicle.chart_accnt, ledger_party_name= get_vehicle.vehicle_num, ledger_gen_date= data['G_BiltyDate'], ledger_debit_amount = 0, ledger_credit_amount= data['G_BvehicleFreight'], ledger_bill=data['G_BiltyNo'],ledger_method= data['G_paid_Method'], ledger_balance= data['G_BvehicleFreight'], ledger_type='vehicle', ledger_descp="Vehicle Payment Towards Bill No: " +data['G_BiltyNo'], pay_start="started", userid = userid)
         add_vehicle_led_result = db.session.execute(add_vehicle_led)
         get_vehicle_chart.networth = ledger_balance
         get_vehicle.net_worth = ledger_balance
-    # add_party_led = insert(Ledger).values(ledger_account_no =get_party.chart_accnt, ledger_party_name= get_party.english_name, ledger_gen_date= data['G_BiltyDate'], ledger_debit_amount = party_amt, ledger_credit_amount= 0, ledger_bill=data['G_BiltyNo'],ledger_method= data['G_paid_Method'], ledger_balance= int(get_party_chart.networth) + (-party_amt), ledger_type='party', ledger_descp="Party Payment Towards Bill No: " +data['G_BiltyNo'])
-    # add_party_led_result = db.session.execute(add_party_led)
-    # get_party_chart.networth = int(get_party_chart.networth) + (-int(party_amt))
-    # get_party.net_amount = int(get_party.net_amount) + (-int(party_amt))
+    add_party_led = insert(Ledger).values(ledger_account_no =get_party.chart_accnt, ledger_party_name= get_party.english_name, ledger_gen_date= data['G_BiltyDate'], ledger_debit_amount = party_amt, ledger_credit_amount= 0, ledger_bill=data['G_BiltyNo'],ledger_method= data['G_paid_Method'], ledger_balance=  (-party_amt), ledger_type='party', ledger_descp="Party Payment Towards Bill No: " +data['G_BiltyNo'], pay_start="started", userid = userid)
+    add_party_led_result = db.session.execute(add_party_led)
+    get_party_chart.networth = int(get_party_chart.networth) + (-int(party_amt))
+    get_party.net_amount = int(get_party.net_amount) + (-int(party_amt))
     add_commi_led = insert(Ledger).values(ledger_account_no =get_commission.id, ledger_party_name= get_party.english_name, ledger_gen_date= data['G_BiltyDate'], ledger_debit_amount = 0, ledger_credit_amount= comm_amt, ledger_bill=data['G_BiltyNo'],ledger_method= data['G_paid_Method'], ledger_balance= int(get_commission.networth) + (comm_amt), ledger_type='commission', ledger_descp="Commission Towards Bill No: " +data['G_BiltyNo'], pay_start="started", userid = userid)
     add_commi_led_result = db.session.execute(add_commi_led)
     get_commission.networth = int(get_commission.networth) + (int(comm_amt))
     db.session.flush()
     db.session.commit()
-    RefreshCOA_Customer.refresh_COA_Vehicle(str(get_vehicle.chart_accnt))
-    RefreshCOA_Customer.refresh_COA_Comm(userid)
     return jsonify({"data":goods_manif_result.inserted_primary_key[0]})
 
 
@@ -279,7 +277,7 @@ def manifesto_oil_create():
     party_amt = int(data['G_O_BFreight']) 
     comm_amt = int(data['G_O_BComm'])
     userid = int(data['userid'])
-    sadd_oil_manifest = insert(OilPso).values(bilty_no= data['G_OBiltyNo'], b_date= data['G_OBiltyDate'], vehicle = data['G_OBVehicle'], loading_point = data['G_O_loading'],unloading_point = data['G_unO_loading'], parties= data['G_O_Bparty'],material= data['G_O_material'],quantity= data['G_O_Bweight'],per_ton= data['G_O_BPerTon'], freight= party_amt,wrt_4_per_freight=data['G_O_BWRT4Freight'], commission= comm_amt, other_cahrges= data['G_O_BOtherCharges'], vehicle_freight= data['G_O_BVehicleFreight'], vehicle_balance= data['G_O_BVehicleBal'], advance_to_vehicle= data['G_O_BVehicleAdvance'],bill_status = 'pending',paid_by=data['G_O_paid_Method'], oils_gst=data['G_O_Oils_GST'], userid = userid)
+    sadd_oil_manifest = insert(OilPso).values(bilty_no= data['G_OBiltyNo'], b_date= data['G_OBiltyDate'], vehicle = data['G_OBVehicle'], loading_point = data['G_O_loading'],unloading_point = data['G_unO_loading'], parties= data['G_O_Bparty'],material= data['G_O_material'],quantity= data['G_O_Bweight'],per_ton= data['G_O_BPerTon'], freight= party_amt,wrt_4_per_freight=data['G_O_BWRT4Freight'], commission= comm_amt, other_cahrges= data['G_O_BOtherCharges'], vehicle_freight= data['G_O_BVehicleFreight'], vehicle_balance= data['G_O_BVehicleBal'], advance_to_vehicle= data['G_O_BVehicleAdvance'],bill_status = 'pending',paid_by=data['G_O_paid_Method'], oils_gst=data['G_O_Oils_GST'], userid = userid, tax_per=data['per_wft'], comm_per = data['per_comm'] )
     oil_manif_result = db.session.execute(sadd_oil_manifest)
     get_party = Party.query.get(int(str(data['G_O_Bparty'])))
     get_vehicle = Vehicles.query.get(int(str(data['G_OBVehicle'])))
@@ -293,22 +291,22 @@ def manifesto_oil_create():
     if (int(vehicle_advance) != 0) :
         ledger_balance = int(get_vehicle_chart.networth) + (int(data['G_O_BVehicleFreight']))
         cash_balance = ledger_balance - int(data['G_O_BVehicleAdvance'])
-        add_vehicle_led = insert(Ledger).values(ledger_account_no =get_vehicle.chart_accnt, ledger_party_name= get_vehicle.vehicle_num, ledger_gen_date= data['G_OBiltyDate'], ledger_debit_amount =0 , ledger_credit_amount= data['G_O_BVehicleFreight'], ledger_bill=data['G_OBiltyNo'],ledger_method= data['G_O_paid_Method'], ledger_balance= ledger_balance, ledger_type='vehicle', ledger_descp="Payment Towards Bill No: " +data['G_OBiltyNo'], pay_start="started", userid = userid)
+        add_vehicle_led = insert(Ledger).values(ledger_account_no =get_vehicle.chart_accnt, ledger_party_name= get_vehicle.vehicle_num, ledger_gen_date= data['G_OBiltyDate'], ledger_debit_amount =0 , ledger_credit_amount= data['G_O_BVehicleFreight'], ledger_bill=data['G_OBiltyNo'],ledger_method= data['G_O_paid_Method'], ledger_balance= data['G_O_BVehicleFreight'], ledger_type='vehicle', ledger_descp="Payment Towards Bill No: " +data['G_OBiltyNo'], pay_start="started", userid = userid)
         add_vehicle_led_result = db.session.execute(add_vehicle_led)
-        add_cash_veh_adv =insert(Ledger).values(ledger_account_no =get_vehicle.chart_accnt, ledger_party_name= get_vehicle.vehicle_num, ledger_gen_date= data['G_OBiltyDate'], ledger_debit_amount = str(data['G_O_BVehicleAdvance']).strip(), ledger_credit_amount= 0 , ledger_bill=data['G_OBiltyNo'],ledger_method= data['G_O_paid_Method'], ledger_balance= cash_balance, ledger_type='vehicle', ledger_descp="Payment Towards Bill No: " +data['G_OBiltyNo'], userid = userid)     
+        add_cash_veh_adv =insert(Ledger).values(ledger_account_no =get_vehicle.chart_accnt, ledger_party_name= get_vehicle.vehicle_num, ledger_gen_date= data['G_OBiltyDate'], ledger_debit_amount = str(data['G_O_BVehicleAdvance']).strip(), ledger_credit_amount= 0 , ledger_bill=data['G_OBiltyNo'],ledger_method= data['G_O_paid_Method'], ledger_balance= int(int(str(data['G_O_BVehicleFreight']).strip()) - int(str(data['G_O_BVehicleAdvance']).strip())), ledger_type='vehicle', ledger_descp="Payment Towards Bill No: " +data['G_OBiltyNo'], userid = userid)     
         add_cash_veh_adv_result = db.session.execute(add_cash_veh_adv)
         get_vehicle_chart.networth = cash_balance
         get_vehicle.net_worth = cash_balance
     else:
         ledger_balance = int(get_vehicle_chart.networth) + (int(data['G_O_BVehicleFreight']))
-        add_vehicle_led = insert(Ledger).values(ledger_account_no =get_vehicle.chart_accnt, ledger_party_name= get_vehicle.vehicle_num, ledger_gen_date= data['G_OBiltyDate'], ledger_debit_amount = 0, ledger_credit_amount= data['G_O_BVehicleFreight'], ledger_bill=data['G_OBiltyNo'],ledger_method= data['G_O_paid_Method'], ledger_balance= ledger_balance, ledger_type='vehicle', ledger_descp="Vehicle Payment Towards Bill No: " +data['G_OBiltyNo'], pay_start="started", userid = userid)
+        add_vehicle_led = insert(Ledger).values(ledger_account_no =get_vehicle.chart_accnt, ledger_party_name= get_vehicle.vehicle_num, ledger_gen_date= data['G_OBiltyDate'], ledger_debit_amount = 0, ledger_credit_amount= data['G_O_BVehicleFreight'], ledger_bill=data['G_OBiltyNo'],ledger_method= data['G_O_paid_Method'], ledger_balance= data['G_O_BVehicleFreight'], ledger_type='vehicle', ledger_descp="Vehicle Payment Towards Bill No: " +data['G_OBiltyNo'], pay_start="started", userid = userid)
         add_vehicle_led_result = db.session.execute(add_vehicle_led)
         get_vehicle_chart.networth = ledger_balance
         get_vehicle.net_worth = ledger_balance
-    # add_party_led = insert(Ledger).values(ledger_account_no =get_party.chart_accnt, ledger_party_name= get_party.english_name, ledger_gen_date= data['G_OBiltyDate'], ledger_debit_amount = party_amt, ledger_credit_amount= 0, ledger_bill=data['G_OBiltyNo'],ledger_method= data['G_O_paid_Method'], ledger_balance= int(get_party_chart.networth) + (-party_amt), ledger_type='party', ledger_descp="Party Payment Towards Bill No: " +data['G_OBiltyNo'])
-    # add_party_led_result = db.session.execute(add_party_led)
-    # get_party_chart.networth = int(get_party_chart.networth) + (-int(party_amt))
-    # get_party.net_amount = int(get_party.net_amount) + (-int(party_amt))
+    add_party_led = insert(Ledger).values(ledger_account_no =get_party.chart_accnt, ledger_party_name= get_party.english_name, ledger_gen_date= data['G_OBiltyDate'], ledger_debit_amount = party_amt, ledger_credit_amount= 0, ledger_bill=data['G_OBiltyNo'],ledger_method= data['G_O_paid_Method'], ledger_balance= (-party_amt), ledger_type='party', ledger_descp="Party Payment Towards Bill No: " +data['G_OBiltyNo'], pay_start="started", userid = userid)
+    add_party_led_result = db.session.execute(add_party_led)
+    get_party_chart.networth = int(get_party_chart.networth) + (-int(party_amt))
+    get_party.net_amount = int(get_party.net_amount) + (-int(party_amt))
     add_commi_led = insert(Ledger).values(ledger_account_no =get_commission.id, ledger_party_name= get_party.english_name, ledger_gen_date= data['G_OBiltyDate'], ledger_debit_amount = 0, ledger_credit_amount= comm_amt, ledger_bill=data['G_OBiltyNo'],ledger_method= data['G_O_paid_Method'], ledger_balance= int(get_commission.networth) + (comm_amt), ledger_type='commission', ledger_descp="Commission Towards Bill No: " +data['G_OBiltyNo'], pay_start="started", userid = userid)
     add_commi_led_result = db.session.execute(add_commi_led)
     get_commission.networth = int(get_commission.networth) + (int(comm_amt))
@@ -316,6 +314,7 @@ def manifesto_oil_create():
     db.session.commit()
     RefreshCOA_Customer.refresh_COA_Vehicle(str(get_vehicle.chart_accnt))
     RefreshCOA_Customer.refresh_COA_Comm(userid)
+    RefreshCOA_Customer.refresh_COA_Party(str(get_party.chart_accnt))
     return jsonify({"data":oil_manif_result.inserted_primary_key[0]})
 
 @api8.route('/add_party_bill', methods=['POST']) 

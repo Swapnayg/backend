@@ -99,8 +99,16 @@ def update_invoice_values_set_update():
     db.session.commit()
     ledger_invoice = Ledger2.query.filter(and_(Ledger2.ledger_gen_date == inv_value.invoice_date,Ledger2.ledger_bill == inv_value.invoice_num ,Ledger2.ledger_type == "client",Ledger2.pay_start == "started" )).one()
     ledger_invoice.ledger_debit_amount = (int(round(float(data['o_OInvGrnTotal']))))
+    ledger_invoice.ledger_balance =  -(int(round(float(data['o_OInvGrnTotal']))))
     db.session.flush()
     db.session.commit()
+    client_led_bal = 0
+    manif_ledg = Ledger2.query.filter(and_(Ledger2.ledger_bill == str(inv_value.invoice_num).strip(),Ledger2.ledger_type == str("client").strip())).order_by(Ledger2.id.asc()).all()
+    for man in manif_ledg:
+        client_led_bal +=  int(man.ledger_credit_amount) - int(man.ledger_debit_amount)
+        man.ledger_balance = client_led_bal
+        db.session.flush()
+        db.session.commit()
     for item in data['o_items']:
         sadd_item = insert(InvoiceItems).values(item_name= str(item['name']).strip().lower(), item_product=item['product'], item_invoice = int(data['o_invoiceId']), item_qnty = item['qty'], item_rate = item['rate'], item_per_tax = item['item_tax'], item_tax = item['tax_amt'], item_disc = item['item_discount'], item_amount = item['total_amt'], item_description = item['description'], item_disc_val =  item['dis_amt'], userid = userid)
         item_result = db.session.execute(sadd_item)
@@ -130,24 +138,31 @@ def update_order_values_set_update():
     del_order_items_data = PurchItems.__table__.delete().where(PurchItems.item_invoice == int(data['o_orderId']))
     db.session.execute(del_order_items_data)
     db.session.commit()
-    ord_value.invoice_refer = str(data['o_invoiceRef'])
-    ord_value.invoice_date = str(data['a_OInvDate'])
-    ord_value.invoice_due_date = str(data['o_OInvDueDate'])
-    ord_value.invoice_tax = str(data['o_OInvTax'])
-    ord_value.invoice_discount = str(data['o_OInvDisc'])
+    ord_value.order_refer = str(data['o_invoiceRef'])
+    ord_value.order_due_date = str(data['o_OInvDueDate'])
+    ord_value.order_tax = str(data['o_OInvTax'])
+    ord_value.order_discount = str(data['o_OInvDisc'])
     ord_value.total_tax = str(data['o_OInvTotax'])
     ord_value.total_discount = str(data['o_OInvDist'])
     ord_value.shipping = str(data['o_OInvShipp'])
     ord_value.grand_total = str(data['o_OInvGrnTotal'])
-    ord_value.invoice_items = len(data['o_items'])
-    ord_value.invoice_note = str(data['o_OInvNote'])
+    ord_value.order_items = len(data['o_items'])
+    ord_value.order_note = str(data['o_OInvNote'])
     ord_value.payment_terms = str(data['o_payment_due'])
     db.session.flush()
     db.session.commit()
     ledger_invoice = Ledger2.query.filter(and_( Ledger2.ledger_gen_date == ord_value.order_date,Ledger2.ledger_bill == ord_value.order_num ,Ledger2.ledger_type == "supplier",Ledger2.pay_start == "started")).one()
     ledger_invoice.ledger_credit_amount = (int(round(float(data['o_OInvGrnTotal']))))
+    ledger_invoice.ledger_balance =  (int(round(float(data['o_OInvGrnTotal']))))
     db.session.flush()
     db.session.commit()
+    client_led_bal = 0
+    manif_ledg = Ledger2.query.filter(and_(Ledger2.ledger_bill == str(ord_value.order_num).strip(),Ledger2.ledger_type == str("supplier").strip())).order_by(Ledger2.id.asc()).all()
+    for man in manif_ledg:
+        client_led_bal +=  int(man.ledger_credit_amount) - int(man.ledger_debit_amount)
+        man.ledger_balance = client_led_bal
+        db.session.flush()
+        db.session.commit()
     for item in data['o_items']:
         sadd_item = insert(PurchItems).values(item_name= str(item['name']).strip().lower(), item_product=item['product'], item_invoice = int(data['o_orderId']), item_qnty = item['qty'], item_rate = item['rate'], item_per_tax = item['item_tax'], item_tax = item['tax_amt'], item_disc = item['item_discount'], item_amount = item['total_amt'], item_description = item['description'], item_disc_val =  item['dis_amt'], userid = userid)
         item_result = db.session.execute(sadd_item)
@@ -179,24 +194,31 @@ def update_stk_ret_values_set_update():
         db.session.execute(del_stock_items_data)
         db.session.commit()
         stk_value.warehouse_id = str(data['o_warehouse'])
-        stk_value.invoice_refer = str(data['o_invoiceRef'])
-        stk_value.invoice_date = str(data['a_OInvDate'])
-        stk_value.invoice_due_date = str(data['o_OInvDueDate'])
-        stk_value.invoice_tax = str(data['o_OInvTax'])
-        stk_value.invoice_discount = str(data['o_OInvDisc'])
+        stk_value.stock_refer = str(data['o_invoiceRef'])
+        stk_value.stock_due_date = str(data['o_OInvDueDate'])
+        stk_value.stock_tax = str(data['o_OInvTax'])
+        stk_value.stock_discount = str(data['o_OInvDisc'])
         stk_value.total_tax = str(data['o_OInvTotax'])
         stk_value.total_discount = str(data['o_OInvDist'])
         stk_value.shipping = str(data['o_OInvShipp'])
         stk_value.grand_total = str(data['o_OInvGrnTotal'])
-        stk_value.invoice_items = len(data['o_items'])
-        stk_value.invoice_note = str(data['o_OInvNote'])
+        stk_value.stock_items = len(data['o_items'])
+        stk_value.stock_note = str(data['o_OInvNote'])
         stk_value.payment_terms = str(data['o_payment_due'])
         db.session.flush()
         db.session.commit()
         ledger_invoice = Ledger2.query.filter(and_( Ledger2.ledger_gen_date == str(stk_value.stock_date).strip(),Ledger2.ledger_bill == str(stk_value.stock_num).strip() ,Ledger2.ledger_type == "supplier",Ledger2.pay_start == "started")).one()
         ledger_invoice.ledger_debit_amount = (int(round(float(data['o_OInvGrnTotal']))))
+        ledger_invoice.ledger_balance =  -(int(round(float(data['o_OInvGrnTotal']))))
         db.session.flush()
         db.session.commit()
+        client_led_bal = 0
+        manif_ledg = Ledger2.query.filter(and_(Ledger2.ledger_bill == str(stk_value.stock_num).strip(),Ledger2.ledger_type == str("supplier").strip())).order_by(Ledger2.id.asc()).all()
+        for man in manif_ledg:
+            client_led_bal +=  int(man.ledger_credit_amount) - int(man.ledger_debit_amount)
+            man.ledger_balance = client_led_bal
+            db.session.flush()
+            db.session.commit()
         for item in data['o_items']:
             sadd_item = insert(ReturnItems).values(item_name= str(item['name']).strip().lower(), item_product=item['product'], item_invoice = int(data['o_stockId']), item_qnty = item['qty'], item_rate = item['rate'], item_per_tax = item['item_tax'], item_tax = item['tax_amt'], item_disc = item['item_discount'], item_amount = item['total_amt'], item_description = item['description'], item_disc_val =  item['dis_amt'], userid = userid)
             item_result = db.session.execute(sadd_item)
@@ -221,24 +243,31 @@ def update_stk_ret_values_set_update():
         db.session.execute(del_stock_items_data)
         db.session.commit()
         stk_value.warehouse_id = str(data['o_warehouse'])
-        stk_value.invoice_refer = str(data['o_invoiceRef'])
-        stk_value.invoice_date = str(data['a_OInvDate'])
-        stk_value.invoice_due_date = str(data['o_OInvDueDate'])
-        stk_value.invoice_tax = str(data['o_OInvTax'])
-        stk_value.invoice_discount = str(data['o_OInvDisc'])
+        stk_value.stock_refer = str(data['o_invoiceRef'])
+        stk_value.stock_due_date = str(data['o_OInvDueDate'])
+        stk_value.stock_tax = str(data['o_OInvTax'])
+        stk_value.stock_discount = str(data['o_OInvDisc'])
         stk_value.total_tax = str(data['o_OInvTotax'])
         stk_value.total_discount = str(data['o_OInvDist'])
         stk_value.shipping = str(data['o_OInvShipp'])
         stk_value.grand_total = str(data['o_OInvGrnTotal'])
-        stk_value.invoice_items = len(data['o_items'])
-        stk_value.invoice_note = str(data['o_OInvNote'])
+        stk_value.stock_items = len(data['o_items'])
+        stk_value.stock_note = str(data['o_OInvNote'])
         stk_value.payment_terms = str(data['o_payment_due'])
         db.session.flush()
         db.session.commit()
         ledger_invoice = Ledger2.query.filter(and_( Ledger2.ledger_gen_date == stk_value.stock_date,Ledger2.ledger_bill == stk_value.stock_num ,Ledger2.ledger_type == "client",Ledger2.pay_start == "started")).one()
         ledger_invoice.ledger_credit_amount = (int(round(float(data['o_OInvGrnTotal']))))
+        ledger_invoice.ledger_balance =  (int(round(float(data['o_OInvGrnTotal']))))
         db.session.flush()
         db.session.commit()
+        client_led_bal = 0
+        manif_ledg = Ledger2.query.filter(and_(Ledger2.ledger_bill == str(stk_value.stock_num).strip(),Ledger2.ledger_type == str("supplier").strip())).order_by(Ledger2.id.asc()).all()
+        for man in manif_ledg:
+            client_led_bal +=  int(man.ledger_credit_amount) - int(man.ledger_debit_amount)
+            man.ledger_balance = client_led_bal
+            db.session.flush()
+            db.session.commit()
         for item in data['o_items']:
             sadd_item = insert(ClientReturnItems).values(item_name= str(item['name']).strip().lower(), item_product=item['product'], item_invoice = int(data['o_stockId']), item_qnty = item['qty'], item_rate = item['rate'], item_per_tax = item['item_tax'], item_tax = item['tax_amt'], item_disc = item['item_discount'], item_amount = item['total_amt'], item_description = item['description'], item_disc_val =  item['dis_amt'], userid = userid)
             item_result = db.session.execute(sadd_item)
@@ -296,12 +325,20 @@ def update_cashbook_set_update():
     userid = int(data['userid'])
     ledger_balance = 0
     get_chart_accnt = ChartOfAccount.query.filter(ChartOfAccount.id == int(str(data['ac_sel_id']))).one()
-    if(data['ac_acc_Type'] == "in"):
-        ledger_balance = int(get_chart_accnt.networth) + int(str(data['ac_amount']))
-    elif(data['ac_acc_Type'] == "out"):
-        ledger_balance = int(get_chart_accnt.networth) - int(str(data['ac_amount']))
+    last_balance = 0
     if(data['led_Type'] == "ledger"):
         ledger_value = Ledger.query.filter(Ledger.id == int(data['ac_cashId'])).first()
+        if(int(ledger_value.ledger_debit_amount) == 0):
+            last_balance = int(ledger_value.ledger_balance) - int(ledger_value.ledger_credit_amount)
+        elif(int(ledger_value.ledger_credit_amount) == 0):
+            if(int(ledger_value.ledger_balance) < 0):
+                last_balance = int(ledger_value.ledger_balance) + -int(ledger_value.ledger_debit_amount)
+            else:
+                last_balance = int(ledger_value.ledger_balance) + int(ledger_value.ledger_debit_amount)
+        if(data['ac_acc_Type'] == "in"):
+            ledger_balance = int(last_balance) + int(str(data['ac_amount']))
+        elif(data['ac_acc_Type'] == "out"):
+            ledger_balance = int(last_balance) - int(str(data['ac_amount']))
         ledger_value.ledger_account_no = str(data['ac_sel_id'])
         ledger_value.ledger_party_name = str(data['ac_sel_party'])
         ledger_value.ledger_gen_date = str(data['ac_cashbookDate'])
@@ -315,6 +352,14 @@ def update_cashbook_set_update():
         ledger_value.ledger_descp = str(data['ac_description'])
         db.session.flush()
         db.session.commit()
+        party_led_bal = 0
+        if(data['ac_party_type'] == "party" or data['ac_party_type'] == "vehicle" or data['ac_party_type'] == "commission"):
+            manif_ledg = Ledger.query.filter(and_(Ledger.ledger_bill == str(data['leg_inv_num']).strip(),Ledger.ledger_type == str(data['ac_party_type']).strip())).order_by(Ledger.id.asc()).all()
+            for man in manif_ledg:
+                party_led_bal +=  int(man.ledger_credit_amount) - int(man.ledger_debit_amount)
+                man.ledger_balance = party_led_bal
+                db.session.flush()
+                db.session.commit()
         if(data['ac_party_type'] == "party"):
             RefreshCOA_Customer.refresh_COA_Party(str(data['ac_sel_id']))
         elif(data['ac_party_type'] == "vehicle"):
@@ -325,6 +370,17 @@ def update_cashbook_set_update():
             RefreshCOA_Customer.refresh_COA_Comm(userid)
     elif(data['led_Type'] == "ledger2"):
         ledger_value = Ledger2.query.filter(Ledger2.id == int(data['ac_cashId'])).first()
+        if(int(ledger_value.ledger_debit_amount) == 0):
+            last_balance = int(ledger_value.ledger_balance) - int(ledger_value.ledger_credit_amount)
+        elif(int(ledger_value.ledger_credit_amount) == 0):
+            if(int(ledger_value.ledger_balance) < 0):
+                last_balance = int(ledger_value.ledger_balance) + -int(ledger_value.ledger_debit_amount)
+            else:
+                last_balance = int(ledger_value.ledger_balance) + int(ledger_value.ledger_debit_amount)
+        if(data['ac_acc_Type'] == "in"):
+            ledger_balance = int(last_balance) + int(str(data['ac_amount']))
+        elif(data['ac_acc_Type'] == "out"):
+            ledger_balance = int(last_balance) - int(str(data['ac_amount']))
         ledger_value.ledger_account_no = str(data['ac_sel_id'])
         ledger_value.ledger_party_name = str(data['ac_sel_party'])
         ledger_value.ledger_gen_date = str(data['ac_cashbookDate'])
@@ -338,6 +394,14 @@ def update_cashbook_set_update():
         ledger_value.ledger_descp = str(data['ac_description'])
         db.session.flush()
         db.session.commit()
+        client_led_bal = 0
+        if(data['ac_party_type'] == "client" or data['ac_party_type'] == "supplier"):
+            clint_suppl_ledg = Ledger2.query.filter(and_(Ledger2.ledger_bill == str(data['leg_inv_num']).strip(),Ledger2.ledger_type == str(data['ac_party_type']).strip())).order_by(Ledger2.id.asc()).all()
+            for man in clint_suppl_ledg:
+                client_led_bal +=  int(man.ledger_credit_amount) - int(man.ledger_debit_amount)
+                man.ledger_balance = client_led_bal
+                db.session.flush()
+                db.session.commit()
         if(data['ac_party_type'] == "client"):
             RefreshCOA_Customer.refresh_COA_Customer(str(get_chart_accnt.id))
         elif(data['ac_party_type'] == "supplier"):
@@ -348,7 +412,6 @@ def update_cashbook_set_update():
 def party_delete(id,userid):
     del_party = Party.query.get(int(id))
     delete_party_COA = ChartOfAccount.__table__.delete().where(ChartOfAccount.id == int(del_party.chart_accnt))
-    party_bills = PartyBill.query.filter(PartyBill.party_id == int(id)).all()
     if(str(del_party.type).strip() == "goods"):
         party_goods =  GoodsNlc.query.filter(GoodsNlc.parties == int(id)).all()
         for p_good in party_goods:
@@ -358,13 +421,6 @@ def party_delete(id,userid):
             db.session.delete(party_good_get)
             db.session.flush()
             db.session.commit() 
-        for p_bilty in party_bills:
-            party_bill_get = PartyBill.query.get(int(p_bilty.id))
-            del_bill_goods_led_data = Ledger.__table__.delete().where(Ledger.ledger_bill == str(party_bill_get.invoice_no).strip())
-            db.session.execute(del_bill_goods_led_data)
-            db.session.delete(party_bill_get)
-            db.session.flush()
-            db.session.commit()
     elif(str(del_party.type).strip() == "oil"):
         party_oils =  OilPso.query.filter(OilPso.parties == int(id)).all()
         for p_oil in party_oils:
@@ -374,13 +430,6 @@ def party_delete(id,userid):
             db.session.delete(party_oil_get)
             db.session.flush()
             db.session.commit() 
-        for p_bilty in party_bills:
-            party_bill_get = PartyBill.query.get(int(p_bilty.id))
-            del_bill_oils_led_data = Ledger.__table__.delete().where(Ledger.ledger_bill == str(party_bill_get.invoice_no).strip())
-            db.session.execute(del_bill_oils_led_data)
-            db.session.delete(party_bill_get)
-            db.session.flush()
-            db.session.commit()
     del_party_ledger_data = Ledger.__table__.delete().where(Ledger.ledger_account_no == str(del_party.chart_accnt).strip())
     db.session.execute(del_party_ledger_data)
     db.session.delete(del_party)

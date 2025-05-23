@@ -125,44 +125,17 @@ def main_dashboard_index(userid):
     payable_data  = []
     receivable_data  = []
     for coa_d in coa_details:
-        ledger_payable = 0
-        ledger_receivable = 0
-        if(str(coa_d.account_mode).strip() == "general" or str(coa_d.account_mode).strip() == "vehicle" or str(coa_d.account_mode).strip() == "party" or str(coa_d.account_mode).strip() == "commission"):
-            cm_ledger_details =  Ledger.query.filter(and_(extract('month', Ledger.datetime)==current_month), Ledger.ledger_account_no == coa_d.id,Ledger.userid == userid).all()
-            lm_ledger_details =  Ledger.query.filter(and_(extract('month', Ledger.datetime)==last_month), Ledger.ledger_account_no == coa_d.id,Ledger.userid == userid).all()
-            for ledg_cm in cm_ledger_details:
-                cm_total_payable += int(ledg_cm.ledger_credit_amount)
-                cm_total_receivable += int(ledg_cm.ledger_debit_amount)
-                ledger_payable += int(ledg_cm.ledger_credit_amount)
-                ledger_receivable += int(ledg_cm.ledger_debit_amount)
-            for ledg_lm in lm_ledger_details:
-                lm_total_payable += int(ledg_lm.ledger_credit_amount)
-                lm_total_receivable += int(ledg_lm.ledger_debit_amount)
-            payable_data.append({"id":coa_d.id,"accountName":str(coa_d.accnt_name).strip().capitalize(),"ledgerBal":round(ledger_payable)})
-            receivable_data.append({"id":coa_d.id,"accountName":str(coa_d.accnt_name).strip().capitalize(),"ledgerBal":round(ledger_receivable)})
-        elif(str(coa_d.account_mode).strip() == "client" or str(coa_d.account_mode).strip() == "supplier"):
-            cm_ledger2_details =  Ledger2.query.filter(and_(extract('month', Ledger2.datetime)==current_month), Ledger2.ledger_account_no == coa_d.id,Ledger2.userid == userid).all()
-            lm_ledger2_details =  Ledger2.query.filter(and_(extract('month', Ledger2.datetime)==last_month), Ledger2.ledger_account_no == coa_d.id,Ledger2.userid == userid).all()
-            for ledg2_cm in cm_ledger2_details:
-                cm_total_payable += int(ledg2_cm.ledger_credit_amount)
-                cm_total_receivable += int(ledg2_cm.ledger_debit_amount)
-                ledger_payable += int(ledg2_cm.ledger_credit_amount)
-                ledger_receivable += int(ledg2_cm.ledger_debit_amount)
-            for ledg2_lm in lm_ledger2_details:
-                lm_total_payable += int(ledg2_lm.ledger_credit_amount)
-                lm_total_receivable += int(ledg2_lm.ledger_debit_amount)
-            payable_data.append({"id":coa_d.id,"accountName":str(coa_d.accnt_name).strip().capitalize(),"ledgerBal":round(ledger_payable)})
-            receivable_data.append({"id":coa_d.id,"accountName":str(coa_d.accnt_name).strip().capitalize(),"ledgerBal":round(ledger_receivable)})
-    total_payable_diff = lm_total_payable - cm_total_payable
-    total_receivable_diff = lm_total_receivable - cm_total_receivable
-    if(int(cm_total_payable) > int(lm_total_payable)):
-        total_payable_status = "high"
-    else:
-        total_payable_status = "low"
-    if(int(cm_total_receivable) > int(lm_total_receivable)):
-        total_receivable_status = "high"
-    else:
-        total_receivable_status = "low"
+        if(str(coa_d.account_mode).strip() != "commission"):
+            debitAmt = 0
+            creditAmt = 0
+            if(int(coa_d.networth) < 0):
+                debitAmt = abs(int(coa_d.networth))
+                cm_total_receivable += abs(int(coa_d.networth))
+            else:
+                creditAmt = abs(int(coa_d.networth))
+                cm_total_payable += abs(int(coa_d.networth))
+            payable_data.append({"id":coa_d.id,"accountName":str(coa_d.accnt_name).strip().capitalize(),"ledgerBal":round(creditAmt)})
+            receivable_data.append({"id":coa_d.id,"accountName":str(coa_d.accnt_name).strip().capitalize(),"ledgerBal":round(debitAmt)})
     customer_lists = Clients.query.filter(and_(extract('month', Clients.datetime)==current_month),Clients.userid == userid).all()
     supplier_lists = Supplier.query.filter(and_(extract('month', Supplier.datetime)==current_month),Supplier.userid == userid).all()
     good_party_count = 0
@@ -317,9 +290,16 @@ def main_area_index():
     if((str(data['overallType']).strip()) == "year"):
         purchase_data = [0] * 12
         sale_data = [0] * 12
-        for item1, item2, item3, item4  in zip(order_data, goods, oils,invoice_data):
-            purchase_data[int(item1[0]) - 1] = round(float(item1[1])) + round(float(item2[2]))  + round(float(item3[2])) 
-            sale_data[int(item4[0]) - 1] = round(float(item4[1])) + round(float(item2[1]))  + round(float(item3[1])) 
+        for ord in order_data:
+            purchase_data[int(ord.month) - 1] = round(float(ord.sum_val))
+        for inv in invoice_data:
+            sale_data[int(inv.month) - 1] = round(float(inv.sum_val))
+        for good in goods:
+            purchase_data[int(good.month) - 1] =  purchase_data[int(good.month) - 1] + round(float(good.sum_veh_freight))
+            sale_data[int(good.month) - 1] =  sale_data[int(good.month) - 1] + round(float(good.sum_freight))
+        for oil in oils:
+            purchase_data[int(oil.month) - 1] =  purchase_data[int(oil.month) - 1] + round(float(oil.sum_veh_freight))
+            sale_data[int(oil.month) - 1] =  sale_data[int(oil.month) - 1] + round(float(oil.sum_freight))
         for index, sale in enumerate(sale_data):
             income_val = sale - purchase_data[index]
             income_data.append(income_val)
@@ -330,6 +310,12 @@ def main_area_index():
             purchase_data[int(ord.month) - 1] = round(float(ord.sum_val))
         for inv in invoice_data:
             sale_data[int(inv.month) - 1] = round(float(inv.sum_val))
+        for good in goods:
+            purchase_data[int(good.month) - 1] =  purchase_data[int(good.month) - 1] + round(float(good.sum_veh_freight))
+            sale_data[int(good.month) - 1] =  sale_data[int(good.month) - 1] + round(float(good.sum_freight))
+        for oil in oils:
+            purchase_data[int(oil.month) - 1] =  purchase_data[int(oil.month) - 1] + round(float(oil.sum_veh_freight))
+            sale_data[int(oil.month) - 1] =  sale_data[int(oil.month) - 1] + round(float(oil.sum_freight))
         for index, sale in enumerate(sale_data):
             income_val = sale - purchase_data[index]
             income_data.append(income_val)

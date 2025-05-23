@@ -221,20 +221,9 @@ def generateProfit_excel():
                 coa_details =  ChartOfAccount.query.filter(and_(ChartOfAccount.accnt_type == sub_acc.id,ChartOfAccount.userid == userid )).all()
                 for coa_d in coa_details:
                     chart_of_acct.append(coa_d.map())
-                    if(str(coa_d.account_mode).strip() == "general" or str(coa_d.account_mode).strip() == "vehicle" or str(coa_d.account_mode).strip() == "party" or str(coa_d.account_mode).strip() == "commission"):
-                        ledg_balance = 0
-                        ledger_details =  Ledger.query.filter(and_(Ledger.ledger_account_no == coa_d.id, Ledger.datetime >= start_date, Ledger.datetime <= end_date)).all()
-                        for ledg in ledger_details:
-                            sub_networth += int(ledg.ledger_debit_amount) - int(ledg.ledger_credit_amount)
-                            ledg_balance += int(ledg.ledger_debit_amount) - int(ledg.ledger_credit_amount)
-                        ledger_data.append({"id":coa_d.id,"ledger_account_name":coa_d.accnt_name, "ledger_account_no":coa_d.accnt_type, "ledger_balance_amount":ledg_balance, "ledger_type":str(coa_d.account_mode).strip()})    
-                    elif(str(coa_d.account_mode).strip() == "client" or str(coa_d.account_mode).strip() == "supplier"):
-                        ledg_balance = 0
-                        ledger_details2 =  Ledger2.query.filter(and_(Ledger2.ledger_account_no == coa_d.id, Ledger2.datetime >= start_date, Ledger2.datetime <= end_date)).all()
-                        for ledg2 in ledger_details2:
-                            sub_networth += int(ledg2.ledger_debit_amount) - int(ledg2.ledger_credit_amount)
-                            ledg_balance += int(ledg2.ledger_debit_amount) - int(ledg2.ledger_credit_amount)  
-                        ledger_data.append({"id":coa_d.id, "ledger_account_name":coa_d.accnt_name,"ledger_account_no":coa_d.accnt_type, "ledger_balance_amount":ledg_balance, "ledger_type":str(coa_d.account_mode).strip()}) 
+                    sub_networth += int(coa_d.networth)
+                    ledg_balance = int(coa_d.networth)
+                    ledger_data.append({"id":coa_d.id, "ledger_account_name":coa_d.accnt_name,"ledger_account_no":coa_d.accnt_type, "ledger_balance_amount":ledg_balance, "ledger_type":str(coa_d.account_mode).strip()}) 
                 account_sub_d.append({"id":sub_acc.id, "type_name_id":sub_acc.type_name_id, "sub_type_name":sub_acc.sub_type_name, "sub_networth":sub_networth})
             for j in range(len(account_sub_d)):
                 if(int(str(accnt_data[row]["id"]).strip())== int(account_sub_d[j]["type_name_id"])):
@@ -252,7 +241,11 @@ def generateProfit_excel():
     worksheet.write(row_no, 1, tax_payable, right_align_format)  
     worksheet.write(row_no + 1, 0, "Tax Receivable(+)")    
     worksheet.write(row_no + 1, 1, tax_receive, right_align_format)   
-    worksheet.write(row_no + 2, 0, "Net Profit (Incomes - Expenses)")    
+    worksheet.write(row_no + 2, 0, "Net Profit (Incomes - Expenses)") 
+    if(int(netprofit) < 0):
+        netprofit = int(netprofit) - int(tax_receive) + int(tax_payable)
+    else:
+        netprofit = int(netprofit) + int(tax_receive) - int(tax_payable)
     worksheet.write(row_no + 2, 1, netprofit, right_align_format)  
     workbook.close()
 

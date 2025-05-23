@@ -39,18 +39,12 @@ def get_sales_report_index():
     invoice_list = TblInvoice.query.filter(and_(TblInvoice.userid == userid,TblInvoice.datetime >= start_date, TblInvoice.datetime <= end_date)).order_by(TblInvoice.id.asc()).all()
     for invoice in invoice_list:
         total_amt = float(invoice.grand_total)
-        all_ledger_data = Ledger2.query.filter(and_(Ledger2.userid == userid,Ledger2.ledger_bill == str(invoice.invoice_num).strip())).all()
-        paid_amt = 0
-        debit_amt = 0
-        rem_amt = 0
-        for leg in all_ledger_data:
-            paid_amt = paid_amt + float(leg.ledger_credit_amount)
-            debit_amt = debit_amt + int(leg.ledger_debit_amount)
-            bal_amt = debit_amt - (paid_amt)
-            rem_amt = debit_amt - total_amt
-            if(rem_amt < 1):
-                rem_amt = 0
-        sales_data.append({"id":invoice.id,"date":invoice.invoice_date ,"invoiceNo":invoice.invoice_num,"clientName":invoice.client_name.client_name,"paidAmt":str(round(paid_amt, 2)),"rmnAmt":str(round(rem_amt, 2)),"balAmt":str(round(bal_amt, 2))})
+        paid_amt = 0.0
+        rem_amt = 0.0
+        bal_amt = 0.0
+        all_ledger_data = Ledger2.query.filter(and_(Ledger2.userid == userid,Ledger2.ledger_bill == str(invoice.invoice_num).strip())).order_by(Ledger2.id.desc()).limit(1).all()
+        for ledg in all_ledger_data:
+            sales_data.append({"id":invoice.id,"date":invoice.invoice_date ,"invoiceNo":invoice.invoice_num,"clientName":invoice.client_name.client_name,"paidAmt":str(ledg.ledger_credit_amount),"rmnAmt":str(round(rem_amt, 2)),"balAmt":str(ledg.ledger_balance)})
     return jsonify(sales_data)
 
 @api24.route('/get_purchase_report_data', methods=['POST']) 

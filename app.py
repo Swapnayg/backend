@@ -134,4 +134,4 @@ def logout_index():
     return jsonify({"data":"success"})
 
 if __name__ == '__main__': 
-	app.run(host='0.0.0.0', port=443)
+	app.run(host='0.0.0.0', port=443, ssl_context=('/root/.acme.sh/secondsweb.com_ecc/secondsweb.com.cer', '/root/.acme.sh/secondsweb.com_ecc/secondsweb.com.key'))

@@ -226,7 +226,6 @@ def add_recc_invoice_create():
         db.session.commit()  
     return jsonify({"data":recc_inv_result.inserted_primary_key[0]})  
 
-    
 @api8.route('/add_manifest_goods', methods=['POST']) 
 def manifesto_create(): 
     data = request.get_json()
